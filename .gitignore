@@ -1,0 +1,14 @@
+node_modules/
+dist/
+
+# Generated locally: embedding index, usage state, timing logs, chunk previews
+data/
+logs/
+*.log
+
+# Notes never get committed (the real notes live outside this repo anyway)
+notes/
+vault/
+
+# The one exception: an explicit sample folder chosen for the Phase 5 demo
+!demo-sample/
