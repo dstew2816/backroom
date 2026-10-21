@@ -2,8 +2,8 @@ node_modules/
 dist/
 
 # Generated locally: embedding index, usage state, timing logs, chunk previews
-data/
-logs/
+/data/
+/logs/
 *.log
 
 # Notes never get committed (the real notes live outside this repo anyway)
