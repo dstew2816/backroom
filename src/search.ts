@@ -98,6 +98,24 @@ export function search(index: LoadedIndex, query: Float32Array, state: State, op
   return { results, distribution: { mean, std, max }, clearTop: clearTop(results) };
 }
 
+/** The JSON shape the web page renders, shared by the local server and the static demo. */
+export function toApiResult(r: Result, text: string) {
+  return {
+    id: r.chunk.id,
+    rank: r.rank,
+    file: r.chunk.file,
+    headings: r.chunk.headings,
+    startLine: r.chunk.startLine,
+    endLine: r.chunk.endLine,
+    text,
+    tags: r.chunk.tags,
+    cosine: r.cosine,
+    z: r.z,
+    boost: r.score - r.cosine,
+    used: r.used ?? null,
+  };
+}
+
 /** Looks for the biggest score drop between neighbouring results; returns how many results sit above it. */
 export function clearTop(results: Pick<Result, 'score'>[]): number | null {
   let best = 0;

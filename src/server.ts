@@ -4,7 +4,7 @@ import { basename, join } from 'node:path';
 import { cleanForEmbedding } from './clean.js';
 import type { Embedder } from './embed.js';
 import { buildIndex, loadIndex, logTiming, type LoadedIndex } from './indexer.js';
-import { search, type SearchOptions } from './search.js';
+import { search, toApiResult, type SearchOptions } from './search.js';
 import { loadState, markUsed, unmarkUsed } from './state.js';
 
 export interface AppOptions {
@@ -82,20 +82,7 @@ export function createApp(opts: AppOptions): Server {
       timing,
       distribution: out.distribution,
       clearTop: out.clearTop,
-      results: out.results.map((r) => ({
-        id: r.chunk.id,
-        rank: r.rank,
-        file: r.chunk.file,
-        headings: r.chunk.headings,
-        startLine: r.chunk.startLine,
-        endLine: r.chunk.endLine,
-        text: cleanForEmbedding(r.chunk.text),
-        tags: r.chunk.tags,
-        cosine: r.cosine,
-        z: r.z,
-        boost: r.score - r.cosine,
-        used: r.used ?? null,
-      })),
+      results: out.results.map((r) => toApiResult(r, cleanForEmbedding(r.chunk.text))),
     };
   }
 

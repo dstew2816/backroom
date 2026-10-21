@@ -11,10 +11,14 @@
     "start": "tsx scripts/serve.ts",
     "search": "tsx scripts/search.ts",
     "used": "tsx scripts/used.ts",
+    "timings": "tsx scripts/timings.ts",
+    "build:demo": "tsx scripts/build-demo.ts",
+    "preview:demo": "tsx scripts/preview-demo.ts",
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
+    "esbuild": "^0.28.2",
     "tsx": "^4.19.0",
     "typescript": "^5.6.0",
     "vitest": "^2.1.0"

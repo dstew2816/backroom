@@ -83,16 +83,20 @@
   </div>
   <div class="chips" id="tags" hidden></div>
 
+  <p class="status" id="demo-note" hidden>Demo: searches run entirely in your browser. Nothing is sent anywhere, and "used" marks stay in this browser only.</p>
   <div id="meta" role="status" aria-live="polite"></div>
   <div id="results"></div>
 </main>
 
+<!--DEMO_SCRIPT-->
 <script>
 const $ = (id) => document.getElementById(id);
 let vault = null;
 const activeTags = new Set();
 
-async function api(path, body) {
+// The static demo defines window.backroomApi (search runs in the browser); the local app talks to the server.
+const api = (path, body) => (window.backroomApi || serverApi)(path, body);
+async function serverApi(path, body) {
   const res = await fetch(path, body === undefined ? {} : {
     method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
   });
@@ -108,6 +112,8 @@ const store = {
 
 function showStatus(s) {
   vault = s.vault;
+  $('reindex').hidden = !!s.demo;
+  $('demo-note').hidden = !s.demo;
   const built = s.builtAt ? new Date(s.builtAt).toLocaleString() : 'never';
   $('status').textContent = s.ready ? `${s.ideas} ideas from ${s.notes} notes · indexed ${built}` : 'No index yet — click Re-index';
   const folder = $('folder'), keep = folder.value;
