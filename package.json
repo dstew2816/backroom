@@ -8,6 +8,7 @@
     "test": "vitest run",
     "chunks": "tsx scripts/preview.ts",
     "index": "tsx scripts/index.ts",
+    "start": "tsx scripts/serve.ts",
     "search": "tsx scripts/search.ts",
     "used": "tsx scripts/used.ts",
     "typecheck": "tsc --noEmit"

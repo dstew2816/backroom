@@ -1,0 +1,226 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Backroom</title>
+<style>
+  :root {
+    --bg: #f6f5f2; --surface: #ffffff; --text: #1e1d1b; --muted: #6b6860; --line: #e2dfd8;
+    --accent: #3b5b8c; --accent-text: #ffffff; --bar: #3b5b8c; --bar-bg: #e9e6df; --used: #8a6d1f;
+    --focus: #3b5b8c55;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #161614; --surface: #1f1f1c; --text: #e8e6e0; --muted: #9a978e; --line: #343430;
+      --accent: #8fb0e0; --accent-text: #11161d; --bar: #8fb0e0; --bar-bg: #2c2c28; --used: #d3b45a;
+      --focus: #8fb0e055;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 16px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  main { max-width: 760px; margin: 0 auto; padding: 24px 16px 64px; }
+  header { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
+  h1 { font-size: 1.4rem; margin: 0; letter-spacing: .01em; }
+  .status { color: var(--muted); font-size: .85rem; }
+  textarea { width: 100%; min-height: 96px; resize: vertical; padding: 12px; font: inherit; color: var(--text);
+    background: var(--surface); border: 1px solid var(--line); border-radius: 8px; }
+  textarea:focus, select:focus, button:focus-visible, input:focus-visible { outline: 3px solid var(--focus); outline-offset: 1px; }
+  .row { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; margin-top: 10px; }
+  .row label { display: inline-flex; gap: 6px; align-items: center; font-size: .9rem; color: var(--muted); }
+  select { font: inherit; font-size: .9rem; padding: 4px 8px; color: var(--text); background: var(--surface); border: 1px solid var(--line); border-radius: 6px; max-width: 100%; }
+  button { font: inherit; font-size: .9rem; padding: 6px 14px; border-radius: 6px; cursor: pointer;
+    color: var(--text); background: var(--surface); border: 1px solid var(--line); }
+  button:hover { border-color: var(--muted); }
+  button.primary { background: var(--accent); color: var(--accent-text); border-color: var(--accent); font-weight: 600; padding: 8px 20px; }
+  button:disabled { opacity: .55; cursor: default; }
+  .spacer { flex: 1; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+  .chip { font-size: .8rem; padding: 2px 10px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); color: var(--muted); cursor: pointer; }
+  .chip[aria-pressed="true"] { background: var(--accent); color: var(--accent-text); border-color: var(--accent); }
+  #meta { margin: 20px 0 8px; color: var(--muted); font-size: .85rem; min-height: 1.3em; }
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; margin-bottom: 12px; }
+  .card.used { opacity: .72; }
+  .where { display: flex; justify-content: space-between; gap: 12px; font-size: .82rem; color: var(--muted); }
+  .where a { color: inherit; }
+  .text { margin: 6px 0 10px; white-space: pre-wrap; overflow-wrap: anywhere; }
+  .text.clamp { display: -webkit-box; -webkit-line-clamp: 5; -webkit-box-orient: vertical; overflow: hidden; }
+  .more { background: none; border: none; padding: 0; color: var(--accent); font-size: .85rem; margin-bottom: 8px; }
+  .foot { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .bar { width: 96px; height: 6px; background: var(--bar-bg); border-radius: 3px; overflow: hidden; flex: none; }
+  .bar > i { display: block; height: 100%; background: var(--bar); }
+  .nums { font-size: .8rem; color: var(--muted); }
+  .tag { font-size: .75rem; color: var(--muted); }
+  .badge { color: var(--used); font-size: .82rem; }
+  .divider { display: flex; align-items: center; gap: 10px; margin: 18px 0; color: var(--muted); font-size: .8rem; }
+  .divider::before, .divider::after { content: ""; flex: 1; border-top: 1px dashed var(--line); }
+  .err { color: #b3261e; } @media (prefers-color-scheme: dark) { .err { color: #f2918a; } }
+  .empty { color: var(--muted); padding: 24px 0; text-align: center; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Backroom</h1>
+    <span class="status" id="status">Loading…</span>
+  </header>
+
+  <label for="scene" class="status">What's happening at the table right now?</label>
+  <textarea id="scene" placeholder="e.g. two party members split off and are hiding in the highlands" autofocus></textarea>
+
+  <div class="row">
+    <button class="primary" id="go">Search</button>
+    <label><input type="checkbox" id="unused"> Unused only</label>
+    <label><input type="checkbox" id="stale" title="Boost ideas never used, or not used for a long time"> Resurface old prep</label>
+    <label>Folder
+      <select id="folder"><option value="">All</option></select>
+    </label>
+    <label>Show
+      <select id="k"><option>5</option><option selected>8</option><option>15</option><option>30</option></select>
+    </label>
+    <span class="spacer"></span>
+    <button id="reindex" title="Pick up notes you added or edited since the last index">Re-index</button>
+  </div>
+  <div class="chips" id="tags" hidden></div>
+
+  <div id="meta" role="status" aria-live="polite"></div>
+  <div id="results"></div>
+</main>
+
+<script>
+const $ = (id) => document.getElementById(id);
+let vault = null;
+const activeTags = new Set();
+
+async function api(path, body) {
+  const res = await fetch(path, body === undefined ? {} : {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Request failed');
+  return data;
+}
+
+const store = {
+  get(k) { try { return localStorage.getItem('backroom.' + k); } catch { return null; } },
+  set(k, v) { try { localStorage.setItem('backroom.' + k, v); } catch {} },
+};
+
+function showStatus(s) {
+  vault = s.vault;
+  const built = s.builtAt ? new Date(s.builtAt).toLocaleString() : 'never';
+  $('status').textContent = s.ready ? `${s.ideas} ideas from ${s.notes} notes · indexed ${built}` : 'No index yet — click Re-index';
+  const folder = $('folder'), keep = folder.value;
+  folder.length = 1;
+  for (const f of s.folders) folder.add(new Option(f, f));
+  folder.value = s.folders.includes(keep) ? keep : '';
+  const tags = $('tags');
+  tags.hidden = s.tags.length === 0;
+  tags.replaceChildren(...s.tags.map((t) => {
+    const b = document.createElement('button');
+    b.className = 'chip'; b.textContent = '#' + t; b.setAttribute('aria-pressed', activeTags.has(t));
+    b.onclick = () => { activeTags.has(t) ? activeTags.delete(t) : activeTags.add(t); b.setAttribute('aria-pressed', activeTags.has(t)); };
+    return b;
+  }));
+}
+
+function el(tag, cls, text) {
+  const n = document.createElement(tag);
+  if (cls) n.className = cls;
+  if (text !== undefined) n.textContent = text;
+  return n;
+}
+
+function card(r, stale) {
+  const c = el('article', 'card' + (r.used ? ' used' : ''));
+  const lines = r.endLine > r.startLine ? `L${r.startLine}–${r.endLine}` : `L${r.startLine}`;
+  const where = el('div', 'where');
+  const title = [r.file.replace(/\.md$/i, ''), ...r.headings].join(' › ');
+  where.append(el('span', '', `${r.rank}. ${title}`));
+  if (vault) {
+    const a = el('a', '', `open · ${lines}`);
+    a.href = `obsidian://open?vault=${encodeURIComponent(vault)}&file=${encodeURIComponent(r.file.replace(/\.md$/i, ''))}`;
+    where.append(a);
+  } else where.append(el('span', '', lines));
+
+  const text = el('div', 'text clamp', r.text);
+  c.append(where, text);
+  if (r.text.length > 320) {
+    const more = el('button', 'more', 'Show more');
+    more.onclick = () => { const open = text.classList.toggle('clamp'); more.textContent = open ? 'Show more' : 'Show less'; };
+    c.append(more);
+  }
+
+  const foot = el('div', 'foot');
+  const bar = el('span', 'bar'); const fill = el('i'); fill.style.width = Math.round(Math.min(1, Math.max(0.04, r.z / 5)) * 100) + '%';
+  bar.append(fill); bar.title = 'Match strength: how far above a typical idea this scores';
+  foot.append(bar, el('span', 'nums', `z ${r.z.toFixed(1)} · cos ${r.cosine.toFixed(2)}` + (stale && r.boost > 0.0005 ? ` · +${r.boost.toFixed(3)} resurfaced` : '')));
+  for (const t of r.tags) foot.append(el('span', 'tag', '#' + t));
+  foot.append(el('span', 'spacer'));
+  const badge = el('span', 'badge');
+  const btn = el('button', '', '');
+  const paint = (used) => {
+    r.used = used; c.classList.toggle('used', !!used);
+    badge.textContent = used ? `Used ${used.lastUsed.slice(0, 10)}${used.count > 1 ? ` (×${used.count})` : ''}` : '';
+    btn.textContent = used ? 'Undo' : 'Mark used';
+  };
+  btn.onclick = async () => {
+    btn.disabled = true;
+    try { paint((await api('/api/used', { id: r.id, undo: !!r.used })).used); } catch (e) { $('meta').textContent = e.message; }
+    btn.disabled = false;
+  };
+  paint(r.used);
+  foot.append(badge, btn);
+  c.append(foot);
+  return c;
+}
+
+async function runSearch() {
+  const scene = $('scene').value.trim();
+  if (!scene) return;
+  $('go').disabled = true; $('meta').className = ''; $('meta').textContent = 'Searching…';
+  try {
+    const stale = $('stale').checked;
+    const out = await api('/api/search', {
+      scene, k: Number($('k').value), unusedOnly: $('unused').checked, stale,
+      folder: $('folder').value, tags: [...activeTags],
+    });
+    const box = $('results'); box.replaceChildren();
+    if (!out.results.length) box.append(el('div', 'empty', 'No ideas match those filters.'));
+    for (const r of out.results) {
+      if (out.clearTop !== null && r.rank === out.clearTop + 1) box.append(el('div', 'divider', 'clear drop in relevance'));
+      box.append(card(r, stale));
+    }
+    const t = out.timing;
+    $('meta').textContent = `Searched ${t.chunksSearched} ideas in ${(t.queryEmbedMs + t.scoreMs).toFixed(0)} ms` +
+      (out.results.length && out.clearTop === null ? ' · no clear drop in relevance among these' : '');
+  } catch (e) { $('meta').className = 'err'; $('meta').textContent = e.message; }
+  $('go').disabled = false;
+}
+
+$('go').onclick = runSearch;
+$('scene').addEventListener('keydown', (e) => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) runSearch(); });
+for (const id of ['unused', 'stale']) {
+  $(id).checked = store.get(id) === '1';
+  $(id).onchange = () => { store.set(id, $(id).checked ? '1' : '0'); if ($('scene').value.trim()) runSearch(); };
+}
+$('k').value = store.get('k') || '8';
+$('k').onchange = () => { store.set('k', $('k').value); if ($('scene').value.trim()) runSearch(); };
+$('folder').onchange = () => { if ($('scene').value.trim()) runSearch(); };
+
+$('reindex').onclick = async () => {
+  $('reindex').disabled = true; $('meta').className = ''; $('meta').textContent = 'Re-indexing…';
+  try {
+    const { stats, status } = await api('/api/reindex', {});
+    showStatus(status);
+    $('meta').textContent = stats.filesChanged || stats.filesRemoved
+      ? `Re-indexed: ${stats.filesChanged} changed notes, ${stats.chunksEmbedded} new ideas, ${stats.totalMs.toFixed(0)} ms`
+      : `Nothing new. Checked ${stats.filesTotal} notes in ${stats.totalMs.toFixed(0)} ms`;
+  } catch (e) { $('meta').className = 'err'; $('meta').textContent = e.message; }
+  $('reindex').disabled = false;
+};
+
+api('/api/status').then(showStatus).catch((e) => { $('status').textContent = e.message; });
+</script>
+</body>
+</html>
