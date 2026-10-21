@@ -1,0 +1,4 @@
+Backroom demo bundles third-party software and a model, unmodified:
+- all-MiniLM-L6-v2 (sentence-transformers), ONNX conversion by Xenova: Apache-2.0
+- transformers.js (Hugging Face): Apache-2.0
+- ONNX Runtime Web (Microsoft): MIT
