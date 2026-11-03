@@ -6,6 +6,11 @@ import type { Chunk, ChunkKind, ParsedNote } from './types.js';
 
 /** Roughly 225 tokens, safely under the ~256-token window of all-MiniLM-L6-v2. */
 export const MAX_CHARS = 900;
+
+export interface ChunkOptions {
+  /** Longest idea, in characters, before it is split at sentence boundaries. Default MAX_CHARS. */
+  maxChars?: number;
+}
 const TAB_WIDTH = 4;
 
 const HEADING = /^\s{0,3}(#{1,6})\s+(.*?)\s*#*\s*$/;
@@ -34,7 +39,8 @@ interface Unit {
   line: number;
 }
 
-export function chunkNote(file: string, content: string): ParsedNote {
+export function chunkNote(file: string, content: string, opts: ChunkOptions = {}): ParsedNote {
+  const max = opts.maxChars ?? MAX_CHARS;
   const lines = content.replace(/^﻿/, '').split(/\r?\n/);
   const fm = parseFrontmatter(lines);
   const title =
@@ -48,7 +54,7 @@ export function chunkNote(file: string, content: string): ParsedNote {
     const dedented = dedent(block.lines);
     const whole = dedented.map((l) => l.text).join('\n');
     const pieces =
-      cleanForEmbedding(whole).length <= MAX_CHARS ? [wholePiece(dedented)] : splitLong(block.kind, dedented);
+      cleanForEmbedding(whole).length <= max ? [wholePiece(dedented)] : splitLong(block.kind, dedented, max);
     const parent = block.kind === 'bullet' ? cleanLine(dedented[0].text).slice(0, 120) : '';
 
     pieces.forEach((piece, i) => {
@@ -222,9 +228,9 @@ function wholePiece(src: SrcLine[]): Piece {
   };
 }
 
-/** Packs sentences/lines into windows under MAX_CHARS; prose windows share one sentence of overlap. */
-function splitLong(kind: ChunkKind, src: SrcLine[]): Piece[] {
-  const units = kind === 'bullet' ? bulletUnits(src) : paragraphUnits(src);
+/** Packs sentences/lines into windows under the maximum; prose windows share one sentence of overlap. */
+function splitLong(kind: ChunkKind, src: SrcLine[], max: number): Piece[] {
+  const units = kind === 'bullet' ? bulletUnits(src, max) : paragraphUnits(src, max);
   const sep = kind === 'bullet' ? '\n' : ' ';
   const windows: Unit[][] = [];
   let cur: Unit[] = [];
@@ -232,7 +238,7 @@ function splitLong(kind: ChunkKind, src: SrcLine[]): Piece[] {
 
   for (const u of units) {
     const add = cleanLine(u.text).length + 1;
-    if (cur.length && len + add > MAX_CHARS) {
+    if (cur.length && len + add > max) {
       windows.push(cur);
       const carry = kind === 'paragraph' && cur.length > 1 ? [cur.at(-1)!] : [];
       cur = [...carry];
@@ -250,16 +256,16 @@ function splitLong(kind: ChunkKind, src: SrcLine[]): Piece[] {
   }));
 }
 
-function bulletUnits(src: SrcLine[]): Unit[] {
+function bulletUnits(src: SrcLine[], max: number): Unit[] {
   const out: Unit[] = [];
   for (const l of src) {
     if (isBlank(l.text)) continue;
-    for (const part of hardCut(l.text)) out.push({ text: part, line: l.line });
+    for (const part of hardCut(l.text, max)) out.push({ text: part, line: l.line });
   }
   return out;
 }
 
-function paragraphUnits(src: SrcLine[]): Unit[] {
+function paragraphUnits(src: SrcLine[], max: number): Unit[] {
   const lines = src.filter((l) => !isBlank(l.text));
   const starts: number[] = [];
   let joined = '';
@@ -276,18 +282,18 @@ function paragraphUnits(src: SrcLine[]): Unit[] {
     if (!text) continue;
     let idx = 0;
     for (let k = 0; k < starts.length; k++) if (starts[k] <= m.index!) idx = k;
-    for (const part of hardCut(text)) out.push({ text: part, line: lines[idx].line });
+    for (const part of hardCut(text, max)) out.push({ text: part, line: lines[idx].line });
   }
   return out;
 }
 
 /** A single run of text with no break points still has to fit the window. */
-function hardCut(text: string): string[] {
-  if (cleanLine(text).length <= MAX_CHARS) return [text];
+function hardCut(text: string, max: number): string[] {
+  if (cleanLine(text).length <= max) return [text];
   const out: string[] = [];
   let cur = '';
   for (const word of text.split(/\s+/)) {
-    if (cur && cur.length + word.length + 1 > MAX_CHARS) {
+    if (cur && cur.length + word.length + 1 > max) {
       out.push(cur);
       cur = word;
     } else {
