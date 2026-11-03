@@ -1,12 +1,22 @@
 import { createHash } from 'node:crypto';
 import { appendFileSync, existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { chunkNote } from './chunk.js';
+import { chunkNote, MAX_CHARS } from './chunk.js';
 import { embedTextFor, MODEL_DTYPE, MODEL_ID, type Embedder } from './embed.js';
 import { scanFolder } from './scan.js';
 import type { Chunk } from './types.js';
 
 const FORMAT_VERSION = 1;
+
+/** Design choices that change what gets embedded; an index built with other choices can't be reused. */
+export interface IndexOptions {
+  /** Longest idea in characters before it is split. Default MAX_CHARS. */
+  maxChars?: number;
+  /** Put the note title and headings in front of each idea before embedding. Default true. */
+  headingContext?: boolean;
+}
+
+const resolveOptions = (o: IndexOptions = {}) => ({ maxChars: o.maxChars ?? MAX_CHARS, headingContext: o.headingContext ?? true });
 
 export interface IndexedChunk extends Chunk {
   /** Hash of the exact text that was embedded; lets edited files reuse vectors for unchanged chunks. */
@@ -26,6 +36,8 @@ interface IndexFile {
   dim: number;
   notesRoot: string;
   builtAt: string;
+  /** Absent in indexes built before these were configurable (they used the defaults). */
+  options?: IndexOptions;
   files: Record<string, FileEntry>;
   chunks: IndexedChunk[];
 }
@@ -80,13 +92,15 @@ export async function buildIndex(
   notesRoot: string,
   dataDir: string,
   embedder: Embedder,
-  opts: { logTimings?: boolean } = {},
+  opts: { logTimings?: boolean } & IndexOptions = {},
 ): Promise<IndexStats> {
   const t0 = performance.now();
   const prev = loadIndex(dataDir);
   const compatible =
     prev && prev.model === MODEL_ID && prev.dtype === MODEL_DTYPE && prev.dim === embedder.dim && prev.notesRoot === notesRoot;
-  const old = compatible ? prev : null;
+  const choices = resolveOptions(opts);
+  const sameChoices = prev && JSON.stringify(resolveOptions(prev.options)) === JSON.stringify(choices);
+  const old = compatible && sameChoices ? prev : null;
 
   const oldByFile = new Map<string, IndexedChunk[]>();
   const oldVec = new Map<string, Float32Array>();
@@ -126,8 +140,8 @@ export async function buildIndex(
       continue;
     }
     filesChanged++;
-    for (const c of chunkNote(f.file, content).chunks) {
-      const text = embedTextFor(c);
+    for (const c of chunkNote(f.file, content, choices).chunks) {
+      const text = embedTextFor(c, choices);
       const textHash = sha1(text);
       chunks.push({ ...c, textHash });
       const cached = oldVec.get(textHash) ?? null;
@@ -165,6 +179,7 @@ export async function buildIndex(
       dim,
       notesRoot,
       builtAt: new Date().toISOString(),
+      options: choices,
       files: fileEntries,
       chunks,
     },

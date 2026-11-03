@@ -43,7 +43,8 @@ export const miniLM: Embedder = {
   },
 };
 
-/** What gets embedded for a chunk: where it lives, then what it says. */
-export function embedTextFor(c: { context: string; body: string }): string {
+/** What gets embedded for a chunk: where it lives (note title and headings), then what it says. */
+export function embedTextFor(c: { context: string; body: string }, opts: { headingContext?: boolean } = {}): string {
+  if (opts.headingContext === false) return c.body;
   return c.context ? `${c.context}: ${c.body}` : c.body;
 }
