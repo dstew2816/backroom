@@ -33,6 +33,7 @@ npm run search -- "<scene>"              options: -n 8, --unused, --tag x, --fol
 npm run used -- 2                        mark result #2 of the last search as used (add --undo)
 npm run chunks -- "<notes folder>"       show how the notes are split into ideas (add --all)
 npm run timings                          summarise logs/timings.jsonl
+npm run eval -- --notes <folder> --scenes <file>   compare design choices (see Evaluation)
 npm test
 ```
 
@@ -48,6 +49,84 @@ The demo ships a precomputed index and runs the search in the visitor's browser.
 First visit downloads about 36 MB (model and runtime); the browser caches it afterwards. "Used" marks in the demo are stored in the visitor's browser only.
 
 The build refuses folders outside `demo-sample/` unless you pass `--allow-outside`.
+
+## Evaluation
+
+**Status: nothing has been measured yet on real notes.** The tool below is built and tested with stand-in (fake) data only. No scores are quoted anywhere in this repository.
+
+The question it answers: when I type a scene, how often does the right idea show up near the top of the results? That lets design choices (idea size, heading context, keyword matching) be compared with numbers instead of by feel. It only finds and ranks text you wrote; it never writes text.
+
+```
+npm run eval -- --notes "<notes folder>" --scenes <scenes.json>
+```
+
+Optional: `--work <folder>` (where the per-design indexes go; default `eval/.work/<scenes file name>`), `--external "Smart Connections=<file.json>"` (repeatable), `--verbose` (list scenes where the baseline missed the top 10), `--json <file>` (also write the numbers to a file). The first run downloads the search model if it is not already cached, and builds one index per design, so it takes a while.
+
+### What is measured
+
+For each scene, the harness finds the position ("rank") of the first result that contains the expected idea. Then:
+
+- **Recall at 5**: the share of scenes where the right idea is in the top 5 results.
+- **Recall at 10**: the share of scenes where the right idea is in the top 10 results.
+- **Mean reciprocal rank** (MRR): for each scene take 1 divided by the rank (1 for first place, 0.5 for second, 0.33 for third, and 0 if the idea is not found at all), then average over all scenes. It rewards putting the right idea higher up. 1.0 is perfect.
+- **Not found**: scenes where the idea appeared nowhere in the ranking.
+
+Worked example: five scenes with ranks 1, 3, 7, 12 and not found give recall at 5 = 2/5, recall at 10 = 3/5, and MRR = (1 + 1/3 + 1/7 + 1/12 + 0) / 5.
+
+The harness calls the app's real search code, so it measures what the app actually does.
+
+### Scene file format
+
+JSON. Either an object, or a bare list of scenes:
+
+```json
+{
+  "label": "My scenes",
+  "publishable": false,
+  "scenes": [
+    { "scene": "The party arrives at a harbor town at night", "file": "places/harbor.md", "expect": "the harbor master takes bribes" },
+    { "scene": "A chase across rooftops", "expect": ["rooftop chase", "slate tiles are slick"] }
+  ]
+}
+```
+
+- `scene` (required): the text you would search with.
+- `expect` (required): a short, distinctive snippet of the idea that should come back, or a list of snippets (any one counts).
+- `file` (optional): the note's path relative to the notes folder. Narrows the match to that note.
+- `label` (optional): a name printed above the results.
+- `publishable` (optional): `false` prints a "do not publish" banner. Use it for synthetic or private sets.
+
+### How the expected idea is identified
+
+By a snippet of its text, checked with "contains" against each result's text after markdown marks (bold, links and so on) are stripped, ignoring capitals and extra spaces. Ideas have no titles, an idea's ID includes a hash of its text so it changes whenever the idea size changes, and line numbers shift when notes are edited. A text snippet stays the same across all the design variants.
+
+Caveat: if a small idea size cuts your snippet in half, the idea counts as "not found". Keep snippets short (6 to 10 words) and near the start of the idea.
+
+### Comparing other tools (for example Smart Connections)
+
+Run the other tool on the same scenes yourself and save its results as JSON, best result first:
+
+```json
+[
+  { "scene": "The party arrives at a harbor town at night", "results": ["text of result 1", "Harbor Notes", "text of result 3"] }
+]
+```
+
+Each result is either the result's text or just the note's name. The `scene` text must match the scenes file exactly. A result counts as correct if it contains the expected snippet, or if it is exactly the expected note's name (when `file` is given). Pass it with `--external "Smart Connections=results.json"`.
+
+### One index folder per design
+
+An index records which design choices built it, and a different choice means the old index is not reused. The harness therefore keeps a separate index folder for each design under the `--work` folder. If you build indexes yourself, never point two designs at the same folder. `eval/dev/` and `eval/.work/` are git-ignored.
+
+### Designs compared
+
+1. Baseline: ideas up to 900 characters, note title and headings added before searching, meaning-based search (embeddings).
+2. Ideas up to 300 characters.
+3. Ideas up to 600 characters.
+4. Ideas up to 1500 characters.
+5. No heading context (the idea's own text only).
+6. Keywords only, using BM25 (a standard word-matching score where rare words count for more).
+7. Hybrid: meaning and keyword rankings combined with reciprocal rank fusion (each ranking gives an idea 1 / (60 + its position) points and the points are added).
 
 ## Notes on how it works
 
