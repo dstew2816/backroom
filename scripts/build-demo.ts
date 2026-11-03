@@ -90,6 +90,7 @@ for (const [from, to] of copies) {
   cpSync(from, join(out, to));
 }
 
+cpSync('web/fonts', join(out, 'fonts'), { recursive: true });
 writeFileSync(join(out, '.nojekyll'), '');
 writeFileSync(
   join(out, 'NOTICE.txt'),
@@ -97,6 +98,7 @@ writeFileSync(
 - all-MiniLM-L6-v2 (sentence-transformers), ONNX conversion by Xenova: Apache-2.0
 - transformers.js (Hugging Face): Apache-2.0
 - ONNX Runtime Web (Microsoft): MIT
+- Instrument Sans and IBM Plex Mono fonts: SIL Open Font License 1.1 (see fonts/)
 `,
 );
 
