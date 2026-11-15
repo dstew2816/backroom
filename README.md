@@ -1,6 +1,33 @@
 # Backroom
 
-Searches your own Markdown notes for the ideas that fit the scene you type. It only finds and ranks text you wrote. It never generates anything and calls no AI service.
+[![tests](https://github.com/dstew2816/backroom/actions/workflows/tests.yml/badge.svg)](https://github.com/dstew2816/backroom/actions/workflows/tests.yml)
+
+**A search box for your own Dungeon Master ideas.** You jot ideas down however they come, with no format to follow, and Backroom keeps every one of them findable. When players do something you did not plan for, or you just need filler, you type a few words about what is happening, like "split party" or "stuck on a road at night", and it shows the ideas you already wrote that fit, best match first. It finds them by meaning, so you do not have to remember the words you used. It remembers which ideas you have already run, so you are not served the same one twice. It never writes anything for you and never sends your notes anywhere.
+
+**[Try the live demo](https://dstew2816.github.io/backroom/?q=split+party)**. It runs entirely in your browser, on 86 ideas from my own sample notes.
+
+[![Backroom showing the ideas that match "split party"](assets/screenshot.jpg)](https://dstew2816.github.io/backroom/?q=split+party)
+
+## How it works
+
+1. **Read.** It reads a folder of Markdown notes. The notes are never changed.
+2. **Cut into ideas.** Each paragraph or top-level bullet becomes one idea, labelled with the headings above it. Notes pasted without any Markdown marks are read the same way.
+3. **Fingerprint.** A small model on your own computer (all-MiniLM-L6-v2, about 25 MB) turns each idea into 384 numbers that stand for what it is about. Ideas about similar things get similar numbers.
+4. **Search.** What you type is fingerprinted the same way and compared with every idea. The closest ones come back first.
+5. **Remember.** Ideas you mark as used are stored apart from your notes, so you can hide them or bring back ones you have not touched in a while.
+
+## Decisions I made, and why
+
+- **It finds, it never writes.** There is no text generation and no call to any AI service. Every result is something I wrote. A game master's prep is personal, and a tool that invents content would be a different tool.
+- **Everything stays on the computer.** The only network access is a one-time download of the search model. The index and the "used" marks live in git-ignored folders.
+- **Notes as they are written.** The splitter handles headings, bold labels, bullets, and plain pasted text with numbered titles. Real notes are messy, so the tests use messy input.
+- **Only changed notes are reprocessed.** Unchanged files are skipped by size and date, then by content. An edited note reuses the fingerprints of the ideas in it that did not change.
+- **"Used" marks survive editing.** An idea is identified by its own text, not its line number, so adding notes above it does not lose the mark.
+- **Honest about weak matches.** Each result shows how far it stands above a typical idea, and the page draws a line where relevance drops sharply.
+- **Measured, not guessed.** An evaluation harness compares seven designs (idea size, heading context, keyword matching, and a mix) by how often the right idea lands near the top. It is built and tested; the results are not in yet, because the test questions have to be written by hand against real notes. See [Evaluation](#evaluation).
+- **The demo is the real code.** The static demo runs the same search code in the browser against a prebuilt index, with no server behind it.
+
+Built with TypeScript on Node, [transformers.js](https://github.com/huggingface/transformers.js) for the model, and Vitest. The web page is a single HTML file with no framework. The tests use a stand-in for the model, so they run in seconds without downloading anything.
 
 ## Setup
 
@@ -136,3 +163,7 @@ An index records which design choices built it, and a different choice means the
 - A scene is embedded when you search, so new text never needs indexing to be used as a query. New notes do need a re-index before they can be found.
 - Scores are cosine similarity. The page also shows `z`, how far above the average idea in your notes the match scores, and draws a divider where relevance drops sharply.
 - Usage state is keyed on the idea's text, not its line number, so marks survive edits above it. Rewriting the idea itself counts as a new idea.
+
+## License
+
+The code is under the [MIT license](LICENSE). The notes in `demo-sample/`, and the text built from them in `docs/data/`, are my own writing and are not covered by it.

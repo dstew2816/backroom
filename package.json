@@ -2,6 +2,7 @@
   "name": "backroom",
   "version": "0.1.0",
   "private": true,
+  "license": "MIT",
   "type": "module",
   "description": "Local search over a game master's own Markdown notes. Finds and ranks existing ideas; never generates text.",
   "scripts": {
