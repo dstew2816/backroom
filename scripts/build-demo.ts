@@ -98,12 +98,12 @@ writeFileSync(
 - all-MiniLM-L6-v2 (sentence-transformers), ONNX conversion by Xenova: Apache-2.0
 - transformers.js (Hugging Face): Apache-2.0
 - ONNX Runtime Web (Microsoft): MIT
-- Instrument Sans and IBM Plex Mono fonts: SIL Open Font License 1.1 (see fonts/)
+- Alegreya, Cinzel and IBM Plex Mono fonts: SIL Open Font License 1.1 (see fonts/)
 `,
 );
 
 const totalMs = performance.now() - t0;
 const build_ = { notes: stats.filesTotal, ideas: stats.chunksTotal, indexMs: tIndex - t0, totalMs };
-logTiming('build-demo', build_);
+if (!args.includes('--no-log')) logTiming('build-demo', build_);
 console.log(`Demo built in ${out}: ${stats.filesTotal} notes, ${stats.chunksTotal} ideas, ${totalMs.toFixed(0)} ms`);
 console.log('Preview: npm run preview:demo');
