@@ -16,7 +16,7 @@ export function parseFrontmatter(lines: string[]): Frontmatter {
       break;
     }
   }
-  if (end === -1) return { data: {}, endIndex: -1 };
+  if (end === -1 || !looksLikeSettings(lines, end)) return { data: {}, endIndex: -1 };
 
   const data: Record<string, string | string[]> = {};
   let listKey: string | null = null;
@@ -48,6 +48,23 @@ export function parseFrontmatter(lines: string[]): Frontmatter {
     }
   }
   return { data, endIndex: end };
+}
+
+/**
+ * A note can open with a `---` divider instead of a settings block. Treating that as frontmatter
+ * would silently drop every idea down to the next divider, so the block must read as settings:
+ * at least one `key: value` line, and nothing else but list items and indented continuations.
+ * When in doubt the lines stay in the note, where the worst case is a stray idea rather than a lost one.
+ */
+function looksLikeSettings(lines: string[], end: number): boolean {
+  let keys = 0;
+  for (let i = 1; i < end; i++) {
+    const line = lines[i];
+    if (line.trim() === '') continue;
+    if (/^[A-Za-z0-9_-]+\s*:/.test(line)) keys++;
+    else if (!/^\s*-\s/.test(line) && !/^\s+\S/.test(line)) return false;
+  }
+  return keys > 0;
 }
 
 function unquote(s: string): string {

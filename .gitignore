@@ -12,3 +12,7 @@ vault/
 
 # The one exception: an explicit sample folder chosen for the Phase 5 demo
 !demo-sample/
+
+# Evaluation harness: synthetic practice set and per-design indexes (never published)
+/eval/dev/
+/eval/.work/

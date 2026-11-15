@@ -4,86 +4,175 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Backroom</title>
+<meta name="color-scheme" content="light dark">
+<script>try { var t = localStorage.getItem('theme'); if (t) document.documentElement.dataset.theme = t; } catch (e) {}</script>
 <style>
-  :root {
-    --bg: #f6f5f2; --surface: #ffffff; --text: #1e1d1b; --muted: #6b6860; --line: #e2dfd8;
-    --accent: #3b5b8c; --accent-text: #ffffff; --bar: #3b5b8c; --bar-bg: #e9e6df; --used: #8a6d1f;
-    --focus: #3b5b8c55;
+  /* A game master's notebook: parchment and ink by day, candlelight by night, one rubric red for titles and marks.
+     Alegreya for reading, Cinzel for titles, IBM Plex Mono for figures. Fonts are served from ./fonts so the page calls no outside service. */
+  @font-face { font-family: "Alegreya"; src: url("fonts/alegreya.woff2") format("woff2"); font-weight: 400 900; font-display: swap; }
+  @font-face { font-family: "Cinzel"; src: url("fonts/cinzel.woff2") format("woff2"); font-weight: 400 900; font-display: swap; }
+  @font-face { font-family: "IBM Plex Mono"; src: url("fonts/ibm-plex-mono-400.woff2") format("woff2"); font-weight: 400; font-display: swap; }
+  @font-face { font-family: "IBM Plex Mono"; src: url("fonts/ibm-plex-mono-500.woff2") format("woff2"); font-weight: 500; font-display: swap; }
+
+  :root, :root[data-theme="light"] {
+    --bg: #e9dfc6; --surface: #f5edd9; --surface-2: #fbf6e8; --line: #d5c7a3; --line-strong: #b5a273;
+    --text: #2a2118; --muted: #6a5b44; --rubric: #8c1c1c; --gold: #8a5f10; --solid: #8c1c1c; --on-solid: #fbf3df;
+    --shadow: 0 1px 0 rgba(255, 255, 255, .5) inset, 0 2px 6px rgba(70, 50, 20, .12); --err: #a01f1f;
+    --edge: rgba(110, 80, 30, .16);
+    --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .36  0 0 0 0 .26  0 0 0 0 .1  0 0 0 .11 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
   }
   @media (prefers-color-scheme: dark) {
-    :root {
-      --bg: #161614; --surface: #1f1f1c; --text: #e8e6e0; --muted: #9a978e; --line: #343430;
-      --accent: #8fb0e0; --accent-text: #11161d; --bar: #8fb0e0; --bar-bg: #2c2c28; --used: #d3b45a;
-      --focus: #8fb0e055;
+    :root:not([data-theme="light"]) {
+      --bg: #14100c; --surface: #1d1712; --surface-2: #251e17; --line: #382d22; --line-strong: #5a4a39;
+      --text: #eadfc8; --muted: #a9987c; --rubric: #dc6f61; --gold: #d8a94e; --solid: #d8a94e; --on-solid: #1a140e;
+      --shadow: 0 1px 0 rgba(255, 240, 200, .04) inset, 0 2px 8px rgba(0, 0, 0, .35); --err: #f0958a;
+      --edge: rgba(0, 0, 0, .45); --grain: none;
     }
   }
+  :root[data-theme="dark"] {
+    --bg: #14100c; --surface: #1d1712; --surface-2: #251e17; --line: #382d22; --line-strong: #5a4a39;
+    --text: #eadfc8; --muted: #a9987c; --rubric: #dc6f61; --gold: #d8a94e; --solid: #d8a94e; --on-solid: #1a140e;
+    --shadow: 0 1px 0 rgba(255, 240, 200, .04) inset, 0 2px 8px rgba(0, 0, 0, .35); --err: #f0958a;
+    --edge: rgba(0, 0, 0, .45); --grain: none;
+  }
+
   * { box-sizing: border-box; }
-  body { margin: 0; background: var(--bg); color: var(--text); font: 16px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
-  main { max-width: 760px; margin: 0 auto; padding: 24px 16px 64px; }
-  header { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
-  h1 { font-size: 1.4rem; margin: 0; letter-spacing: .01em; }
-  .status { color: var(--muted); font-size: .85rem; }
-  textarea { width: 100%; min-height: 96px; resize: vertical; padding: 12px; font: inherit; color: var(--text);
-    background: var(--surface); border: 1px solid var(--line); border-radius: 8px; }
-  textarea:focus, select:focus, button:focus-visible, input:focus-visible { outline: 3px solid var(--focus); outline-offset: 1px; }
-  .row { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; margin-top: 10px; }
-  .row label { display: inline-flex; gap: 6px; align-items: center; font-size: .9rem; color: var(--muted); }
-  select { font: inherit; font-size: .9rem; padding: 4px 8px; color: var(--text); background: var(--surface); border: 1px solid var(--line); border-radius: 6px; max-width: 100%; }
-  button { font: inherit; font-size: .9rem; padding: 6px 14px; border-radius: 6px; cursor: pointer;
-    color: var(--text); background: var(--surface); border: 1px solid var(--line); }
-  button:hover { border-color: var(--muted); }
-  button.primary { background: var(--accent); color: var(--accent-text); border-color: var(--accent); font-weight: 600; padding: 8px 20px; }
-  button:disabled { opacity: .55; cursor: default; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0; min-height: 100vh; color: var(--text);
+    background: var(--grain), var(--bg);
+    font: 400 1.08rem/1.55 "Alegreya", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+    transition: background-color .2s, color .2s;
+  }
+  /* Darkened page edges, fixed to the window so long result lists do not repaint it. */
+  body::before { content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none; background: radial-gradient(ellipse 120% 90% at 50% 0%, transparent 55%, var(--edge) 100%); }
+  a { color: inherit; text-decoration-color: var(--line-strong); text-underline-offset: .2em; }
+  a:hover { text-decoration-color: currentColor; }
+  .mono, .nums, .loc, #status { font-family: "IBM Plex Mono", ui-monospace, Consolas, monospace; font-variant-numeric: tabular-nums; }
+  .caps, .brand, .eyebrow, .pill, .name, .divider, button.primary, .panel > label { font-family: "Cinzel", "Alegreya", Georgia, serif; }
+  :focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; }
+  textarea:focus-visible, select:focus-visible { outline-offset: 1px; }
+
+  /* Top bar */
+  .nav { max-width: 48rem; margin: 0 auto; padding: 1.1rem 1rem 0; }
+  .nav-in { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding-bottom: .8rem; border-bottom: 1px solid var(--line-strong); box-shadow: 0 3px 0 -2px var(--line); }
+  .brand { font-weight: 700; font-size: 1.05rem; letter-spacing: .08em; text-transform: uppercase; white-space: nowrap; display: inline-flex; align-items: center; gap: .55rem; }
+  .brand svg { color: var(--rubric); flex: none; }
+  .pill { font-size: .62rem; font-weight: 700; letter-spacing: .1em; padding: .12rem .5rem; border: 1px solid var(--rubric); border-radius: 3px; color: var(--rubric); }
+  .nav-r { display: flex; align-items: center; gap: 1.1rem; font-size: .98rem; color: var(--muted); }
+  .nav-r a { text-decoration: none; white-space: nowrap; }
+  .nav-r a:hover { color: var(--text); }
+  .switch { display: inline-flex; align-items: center; gap: .55rem; background: none; border: 0; color: var(--muted); font: inherit; font-size: .98rem; cursor: pointer; padding: .2rem; border-radius: 999px; }
+  .switch .track { width: 2.4rem; height: 1.35rem; border-radius: 999px; background: var(--surface-2); border: 1px solid var(--line-strong); position: relative; }
+  .switch .track::after { content: ""; position: absolute; top: 2px; left: 2px; width: calc(1.35rem - 6px); height: calc(1.35rem - 6px); border-radius: 50%; background: var(--gold); transition: transform .2s; }
+  .switch[aria-checked="true"] .track::after { transform: translateX(1.05rem); }
+  @media (prefers-reduced-motion: reduce) { .switch .track::after { transition: none; } body { transition: none; } }
+  @media (max-width: 30rem) { .switch .lbl, .about-link .long, .hint { display: none; } }
+
+  main { max-width: 48rem; margin: 0 auto; padding: 2.4rem 1rem 4rem; }
+  .eyebrow { font-size: .74rem; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; color: var(--rubric); margin: 0 0 .5rem; }
+  h1 { font: 800 clamp(2.3rem, 7vw, 3.2rem)/1.05 "Alegreya", Georgia, serif; letter-spacing: -.01em; margin: 0 0 .6rem; }
+  .lede { margin: 0 0 .5rem; color: var(--muted); max-width: 36rem; font-size: 1.15rem; }
+  #status { margin: 0 0 1.75rem; font-size: .76rem; color: var(--muted); }
+
+  /* Search panel: a framed sheet */
+  .panel { background: var(--surface); border: 1px solid var(--line-strong); border-radius: 4px; padding: 1.15rem 1.15rem 1.05rem; box-shadow: 0 0 0 4px var(--surface), 0 0 0 5px var(--line), var(--shadow); margin: 5px; }
+  .panel > label { display: block; font-weight: 700; font-size: .8rem; letter-spacing: .12em; text-transform: uppercase; color: var(--rubric); margin: 0 0 .6rem; }
+  textarea { width: 100%; min-height: 6.5rem; resize: vertical; padding: .8rem .95rem; font: inherit; font-size: 1.12rem; color: var(--text); background: var(--surface-2); border: 1px solid var(--line); border-radius: 3px; }
+  textarea::placeholder { color: var(--muted); opacity: .75; font-style: italic; }
+  .row { display: flex; flex-wrap: wrap; gap: .6rem 1.1rem; align-items: center; margin-top: .9rem; }
+  .row label { display: inline-flex; gap: .45rem; align-items: center; font-size: .98rem; color: var(--muted); cursor: pointer; max-width: 100%; min-width: 0; }
+  input[type="checkbox"] { accent-color: var(--rubric); width: 1rem; height: 1rem; margin: 0; }
+  select { font: inherit; font-size: .95rem; padding: .25rem 1.6rem .25rem .6rem; color: var(--text); background: var(--surface-2); border: 1px solid var(--line-strong); border-radius: 3px; min-width: 0; max-width: min(22rem, 100%); }
+  button { font: inherit; font-size: .98rem; font-weight: 500; padding: .4rem .95rem; border-radius: 3px; cursor: pointer; color: var(--text); background: transparent; border: 1px solid var(--line-strong); }
+  button:hover { border-color: var(--text); }
+  button.primary { background: var(--solid); color: var(--on-solid); border-color: var(--solid); padding: .6rem 1.5rem; font-size: .85rem; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; box-shadow: 0 2px 0 rgba(0, 0, 0, .18); }
+  button.primary:hover { filter: brightness(1.1); }
+  button:disabled { opacity: .5; cursor: default; }
   .spacer { flex: 1; }
-  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
-  .chip { font-size: .8rem; padding: 2px 10px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); color: var(--muted); cursor: pointer; }
-  .chip[aria-pressed="true"] { background: var(--accent); color: var(--accent-text); border-color: var(--accent); }
-  #meta { margin: 20px 0 8px; color: var(--muted); font-size: .85rem; min-height: 1.3em; }
-  .card { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; margin-bottom: 12px; }
-  .card.used { opacity: .72; }
-  .where { display: flex; justify-content: space-between; gap: 12px; font-size: .82rem; color: var(--muted); }
-  .where a { color: inherit; }
-  .text { margin: 6px 0 10px; white-space: pre-wrap; overflow-wrap: anywhere; }
+  .hint { font-size: .72rem; color: var(--muted); }
+  .chips { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem; margin-top: .8rem; }
+  .chip { font-size: .92rem; font-weight: 400; font-style: italic; padding: .12rem .7rem; background: var(--surface-2); border-color: var(--line); color: var(--muted); }
+  .chip:hover { color: var(--text); }
+  .chip[aria-pressed="true"] { background: var(--solid); color: var(--on-solid); border-color: var(--solid); }
+  .note { margin: 1rem 0 0; color: var(--muted); font-size: .95rem; font-style: italic; border-left: 2px solid var(--rubric); padding-left: .9rem; }
+
+  /* Results: each idea is a card with a rubric rule, like an entry in a rulebook */
+  #meta { margin: 1.75rem 0 .9rem; color: var(--muted); font-size: .95rem; font-style: italic; min-height: 1.3em; }
+  #meta.err { color: var(--err); font-style: normal; }
+  .card { background: var(--surface); border: 1px solid var(--line); border-top: 3px solid var(--rubric); border-radius: 3px; padding: .9rem 1.15rem .85rem; margin-bottom: .9rem; box-shadow: var(--shadow); }
+  .card.used { opacity: .6; border-top-color: var(--line-strong); }
+  .head { display: flex; align-items: flex-start; gap: .8rem; }
+  .rank { flex: none; width: 2.1rem; height: 2.3rem; display: grid; place-items: center; margin-top: .1rem; background: var(--rubric); color: var(--surface); font: 500 .85rem "IBM Plex Mono", ui-monospace, monospace; clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); }
+  .card.used .rank { background: var(--line-strong); }
+  .title { flex: 1; min-width: 0; }
+  .name { margin: 0; font-size: 1.02rem; font-weight: 700; letter-spacing: .05em; line-height: 1.3; color: var(--rubric); overflow-wrap: anywhere; }
+  .crumbs { font-size: .86rem; color: var(--muted); overflow-wrap: anywhere; line-height: 1.35; margin-top: .1rem; }
+  .loc { flex: none; font-size: .7rem; color: var(--muted); white-space: nowrap; padding-top: .3rem; text-decoration: none; }
+  a.loc:hover { color: var(--text); }
+  .rule { height: 2px; margin: .6rem 0 .65rem; background: linear-gradient(90deg, var(--rubric), transparent 85%); opacity: .7; }
+  .text { margin: 0 0 .7rem; white-space: pre-wrap; overflow-wrap: anywhere; }
   .text.clamp { display: -webkit-box; -webkit-line-clamp: 5; -webkit-box-orient: vertical; overflow: hidden; }
-  .more { background: none; border: none; padding: 0; color: var(--accent); font-size: .85rem; margin-bottom: 8px; }
-  .foot { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
-  .bar { width: 96px; height: 6px; background: var(--bar-bg); border-radius: 3px; overflow: hidden; flex: none; }
-  .bar > i { display: block; height: 100%; background: var(--bar); }
-  .nums { font-size: .8rem; color: var(--muted); }
-  .tag { font-size: .75rem; color: var(--muted); }
-  .badge { color: var(--used); font-size: .82rem; }
-  .divider { display: flex; align-items: center; gap: 10px; margin: 18px 0; color: var(--muted); font-size: .8rem; }
-  .divider::before, .divider::after { content: ""; flex: 1; border-top: 1px dashed var(--line); }
-  .err { color: #b3261e; } @media (prefers-color-scheme: dark) { .err { color: #f2918a; } }
-  .empty { color: var(--muted); padding: 24px 0; text-align: center; }
+  .more { background: none; border: 0; padding: 0; color: var(--muted); font-size: .92rem; font-style: italic; margin: -.3rem 0 .7rem; text-decoration: underline; text-underline-offset: .2em; text-decoration-color: var(--line-strong); }
+  .more:hover { color: var(--text); }
+  .foot { display: flex; align-items: center; gap: .75rem; flex-wrap: wrap; padding-top: .65rem; border-top: 1px solid var(--line); }
+  .bar { width: 5.5rem; height: 5px; background: var(--surface-2); border: 1px solid var(--line); border-radius: 999px; overflow: hidden; flex: none; }
+  .bar > i { display: block; height: 100%; background: var(--gold); border-radius: 999px; }
+  .nums { font-size: .7rem; color: var(--muted); }
+  .tag { font-size: .8rem; color: var(--muted); padding: 0 .5rem; border: 1px solid var(--line); border-radius: 3px; }
+  .badge { color: var(--rubric); font-size: .9rem; font-style: italic; }
+  .foot button { font-size: .9rem; padding: .2rem .8rem; }
+  .divider { display: flex; align-items: center; gap: .75rem; margin: 1.3rem 0; color: var(--rubric); font-size: .68rem; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; }
+  .divider::before { content: ""; flex: 1; height: 2px; background: linear-gradient(270deg, var(--rubric), transparent); opacity: .6; }
+  .divider::after { content: ""; flex: 1; height: 2px; background: linear-gradient(90deg, var(--rubric), transparent); opacity: .6; }
+  .empty { color: var(--muted); padding: 2rem 0; text-align: center; font-style: italic; }
 </style>
 </head>
 <body>
-<main>
-  <header>
-    <h1>Backroom</h1>
-    <span class="status" id="status">Loading…</span>
-  </header>
-
-  <label for="scene" class="status">What's happening at the table right now?</label>
-  <textarea id="scene" placeholder="e.g. two party members split off and are hiding in the highlands" autofocus></textarea>
-
-  <div class="row">
-    <button class="primary" id="go">Search</button>
-    <label><input type="checkbox" id="unused"> Unused only</label>
-    <label><input type="checkbox" id="stale" title="Boost ideas never used, or not used for a long time"> Resurface old prep</label>
-    <label>Folder
-      <select id="folder"><option value="">All</option></select>
-    </label>
-    <label>Show
-      <select id="k"><option>5</option><option selected>8</option><option>15</option><option>30</option></select>
-    </label>
-    <span class="spacer"></span>
-    <button id="reindex" title="Pick up notes you added or edited since the last index">Re-index</button>
+<nav class="nav" aria-label="Main">
+  <div class="nav-in">
+    <span class="brand">
+      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round" aria-hidden="true"><path d="M12 2 21 7v10l-9 5-9-5V7z"/><path d="M12 2 7.5 9.5h9zM7.5 9.5 12 17.5l4.5-8M3 7l4.5 2.5M21 7l-4.5 2.5M3 17l9 .5 9-.5M12 17.5V22"/></svg>
+      Backroom <span class="pill" id="mode-pill" hidden>demo</span>
+    </span>
+    <div class="nav-r">
+      <a class="about-link" id="about" href="https://dstew2816.github.io/projects/backroom.html" hidden>About<span class="long"> the project</span></a>
+      <button class="switch" type="button" role="switch" aria-checked="false" aria-label="Dark mode"><span class="lbl">Daylight</span><span class="track"></span></button>
+    </div>
   </div>
-  <div class="chips" id="tags" hidden></div>
+</nav>
 
-  <p class="status" id="demo-note" hidden>Demo: searches run entirely in your browser. Nothing is sent anywhere, and "used" marks stay in this browser only.</p>
+<main>
+  <p class="eyebrow">Search your own prep</p>
+  <h1>What's happening at the table?</h1>
+  <p class="lede">Describe the scene in a few words. Backroom finds the ideas you already wrote that fit it. It never writes anything new.</p>
+  <p id="status">Loading…</p>
+
+  <section class="panel">
+    <label for="scene">The scene right now</label>
+    <textarea id="scene" placeholder="e.g. two party members split off and are hiding in the highlands" autofocus></textarea>
+    <div class="chips" id="examples" hidden><span class="hint mono">Try one</span></div>
+
+    <div class="row">
+      <button class="primary" id="go">Search</button>
+      <span class="hint mono">Ctrl/⌘ + Enter</span>
+      <span class="spacer"></span>
+      <button id="reindex" title="Pick up notes you added or edited since the last index">Re-index</button>
+    </div>
+    <div class="row">
+      <label><input type="checkbox" id="unused"> Unused only</label>
+      <label><input type="checkbox" id="stale" title="Boost ideas never used, or not used for a long time"> Resurface old prep</label>
+      <label>Folder
+        <select id="folder"><option value="">All</option></select>
+      </label>
+      <label>Show
+        <select id="k"><option>5</option><option selected>8</option><option>15</option><option>30</option></select>
+      </label>
+    </div>
+    <div class="chips" id="tags" hidden></div>
+    <p class="note" id="demo-note" hidden>This demo searches my own sample notes, entirely in your browser. Nothing is sent anywhere, and "used" marks stay in this browser only. The first search downloads the small comparison model (about 36 MB), so give it a moment.</p>
+  </section>
+
   <div id="meta" role="status" aria-live="polite"></div>
   <div id="results"></div>
 </main>
@@ -108,12 +197,29 @@ async function serverApi(path, body) {
 const store = {
   get(k) { try { return localStorage.getItem('backroom.' + k); } catch { return null; } },
   set(k, v) { try { localStorage.setItem('backroom.' + k, v); } catch {} },
+  setRaw(k, v) { try { localStorage.setItem(k, v); } catch {} },
 };
+
+// Shown in the demo only: they are written for the sample notes, not for anyone's own.
+const EXAMPLES = ['split party', 'need a quick road encounter', 'the employer betrays the party', 'smugglers at the docks', 'something eerie, no fighting'];
+function showExamples() {
+  const box = $('examples');
+  if (!box.hidden) return;
+  box.hidden = false;
+  for (const text of EXAMPLES) {
+    const b = el('button', 'chip', text);
+    b.onclick = () => { $('scene').value = text; runSearch(); };
+    box.append(b);
+  }
+}
 
 function showStatus(s) {
   vault = s.vault;
+  if (s.demo) showExamples();
   $('reindex').hidden = !!s.demo;
   $('demo-note').hidden = !s.demo;
+  $('mode-pill').hidden = !s.demo;
+  $('about').hidden = !s.demo;
   const built = s.builtAt ? new Date(s.builtAt).toLocaleString() : 'never';
   $('status').textContent = s.ready ? `${s.ideas} ideas from ${s.notes} notes · indexed ${built}` : 'No index yet — click Re-index';
   const folder = $('folder'), keep = folder.value;
@@ -140,17 +246,24 @@ function el(tag, cls, text) {
 function card(r, stale) {
   const c = el('article', 'card' + (r.used ? ' used' : ''));
   const lines = r.endLine > r.startLine ? `L${r.startLine}–${r.endLine}` : `L${r.startLine}`;
-  const where = el('div', 'where');
-  const title = [r.file.replace(/\.md$/i, ''), ...r.headings].join(' › ');
-  where.append(el('span', '', `${r.rank}. ${title}`));
+  // The idea's own title leads (its nearest heading, or the note's name when it has none); where it lives sits beneath.
+  const note = r.file.replace(/\.md$/i, '');
+  const folders = note.split('/');
+  const name = r.headings.length ? r.headings.at(-1) : folders.at(-1);
+  const crumbs = r.headings.length ? [note, ...r.headings.slice(0, -1)].join(' › ') : folders.slice(0, -1).join('/');
+  const head = el('header', 'head');
+  const title = el('div', 'title');
+  title.append(el('h2', 'name', name));
+  if (crumbs) title.append(el('div', 'crumbs', crumbs));
+  head.append(el('span', 'rank', String(r.rank)), title);
   if (vault) {
-    const a = el('a', '', `open · ${lines}`);
-    a.href = `obsidian://open?vault=${encodeURIComponent(vault)}&file=${encodeURIComponent(r.file.replace(/\.md$/i, ''))}`;
-    where.append(a);
-  } else where.append(el('span', '', lines));
+    const a = el('a', 'loc', `open · ${lines}`);
+    a.href = `obsidian://open?vault=${encodeURIComponent(vault)}&file=${encodeURIComponent(note)}`;
+    head.append(a);
+  } else head.append(el('span', 'loc', lines));
 
   const text = el('div', 'text clamp', r.text);
-  c.append(where, text);
+  c.append(head, el('div', 'rule'), text);
   if (r.text.length > 320) {
     const more = el('button', 'more', 'Show more');
     more.onclick = () => { const open = text.classList.toggle('clamp'); more.textContent = open ? 'Show more' : 'Show less'; };
@@ -226,7 +339,21 @@ $('reindex').onclick = async () => {
   $('reindex').disabled = false;
 };
 
-api('/api/status').then(showStatus).catch((e) => { $('status').textContent = e.message; });
+// Daylight (parchment) and candlelight (dark) switch. Shares the 'theme' choice with the portfolio site when served from the same origin.
+(() => {
+  const root = document.documentElement, sw = document.querySelector('.switch');
+  const current = () => root.dataset.theme || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+  const paint = () => { const dark = current() === 'dark'; sw.setAttribute('aria-checked', dark); sw.querySelector('.lbl').textContent = dark ? 'Candlelight' : 'Daylight'; };
+  sw.onclick = () => { const next = current() === 'dark' ? 'light' : 'dark'; root.dataset.theme = next; store.setRaw('theme', next); paint(); };
+  paint();
+})();
+
+// A link can carry a search: .../?q=split+party fills the box and runs it.
+api('/api/status').then((s) => {
+  showStatus(s);
+  const q = new URLSearchParams(location.search).get('q');
+  if (q && s.ready) { $('scene').value = q; runSearch(); }
+}).catch((e) => { $('status').textContent = e.message; });
 </script>
 </body>
 </html>

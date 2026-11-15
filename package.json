@@ -2,6 +2,7 @@
   "name": "backroom",
   "version": "0.1.0",
   "private": true,
+  "license": "MIT",
   "type": "module",
   "description": "Local search over a game master's own Markdown notes. Finds and ranks existing ideas; never generates text.",
   "scripts": {
@@ -14,6 +15,7 @@
     "timings": "tsx scripts/timings.ts",
     "build:demo": "tsx scripts/build-demo.ts",
     "preview:demo": "tsx scripts/preview-demo.ts",
+    "eval": "tsx scripts/eval.ts",
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {

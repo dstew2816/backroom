@@ -6,6 +6,11 @@ import type { Chunk, ChunkKind, ParsedNote } from './types.js';
 
 /** Roughly 225 tokens, safely under the ~256-token window of all-MiniLM-L6-v2. */
 export const MAX_CHARS = 900;
+
+export interface ChunkOptions {
+  /** Longest idea, in characters, before it is split at sentence boundaries. Default MAX_CHARS. */
+  maxChars?: number;
+}
 const TAB_WIDTH = 4;
 
 const HEADING = /^\s{0,3}(#{1,6})\s+(.*?)\s*#*\s*$/;
@@ -13,6 +18,13 @@ const BULLET = /^(\s*)(?:[-*+•]|\d+[.)])(?:\s+(.*))?$/;
 /** A line that is only a bold label ("**The Kingdom of Arcallis**") acts as a heading. */
 const BOLD_LABEL = /^\s*(?:\*\*|__)([^*_]{1,80})(?:\*\*|__):?\s*$/;
 const BOLD_LABEL_LEVEL = 7;
+/** A plain line sitting directly on a numbered entry ("Combat & Ambush Scenarios") names that group of entries. */
+const SECTION_LABEL_LEVEL = 8;
+/** A plain numbered line sitting directly on its text ("1. The Grand Ambush") names that idea. */
+const NUMBERED_TITLE_LEVEL = 9;
+const NUMBERED = /^\s*\d+[.)]\s+\S/;
+/** Titles and labels are short; a longer line is more likely hard-wrapped prose. */
+const LABEL_MAX = 60;
 const RULE = /^\s*([-*_])(\s*\1){2,}\s*$/;
 const FENCE = /^\s*(```|~~~)/;
 
@@ -34,7 +46,8 @@ interface Unit {
   line: number;
 }
 
-export function chunkNote(file: string, content: string): ParsedNote {
+export function chunkNote(file: string, content: string, opts: ChunkOptions = {}): ParsedNote {
+  const max = opts.maxChars ?? MAX_CHARS;
   const lines = content.replace(/^﻿/, '').split(/\r?\n/);
   const fm = parseFrontmatter(lines);
   const title =
@@ -48,7 +61,7 @@ export function chunkNote(file: string, content: string): ParsedNote {
     const dedented = dedent(block.lines);
     const whole = dedented.map((l) => l.text).join('\n');
     const pieces =
-      cleanForEmbedding(whole).length <= MAX_CHARS ? [wholePiece(dedented)] : splitLong(block.kind, dedented);
+      cleanForEmbedding(whole).length <= max ? [wholePiece(dedented)] : splitLong(block.kind, dedented, max);
     const parent = block.kind === 'bullet' ? cleanLine(dedented[0].text).slice(0, 120) : '';
 
     pieces.forEach((piece, i) => {
@@ -96,12 +109,68 @@ const isHeading = (s: string) => HEADING.test(s);
 const isRule = (s: string) => RULE.test(s);
 const isBullet = (s: string) => !isRule(s) && BULLET.test(s);
 const isFence = (s: string) => FENCE.test(s);
+const isPlain = (s: string) => !isBlank(s) && !isHeading(s) && !isBullet(s) && !isRule(s) && !isFence(s);
+
+/** The cleaned text if the line reads as a name for what follows: short, and not a sentence or a "lead-in:". */
+function labelLike(raw: string): string | null {
+  const text = cleanLine(raw);
+  return hasContent(text) && text.length <= LABEL_MAX && !/[.,;:]$/.test(text) ? text : null;
+}
+
+/**
+ * Notes pasted without Markdown marks look like
+ *     1. The Grand Ambush
+ *     A trusted informant sets up a meeting ...
+ * There the numbered line is the idea's title, the same as "### 1. The Grand Ambush", not a list item.
+ * It counts as a title only when the text directly beneath is not indented (that would be a list item
+ * continuing) and clearly outweighs it: at least 40 characters and twice the title's length. Anything
+ * less ("1. Buy rope / and a lamp") stays an ordinary list item, with both lines kept as one idea.
+ */
+function numberedTitle(lines: string[], i: number): string | null {
+  if (!NUMBERED.test(lines[i])) return null;
+  const title = labelLike(lines[i]);
+  if (!title) return null;
+  let below = 0;
+  for (let j = i + 1; j < lines.length && isPlain(lines[j]); j++) {
+    if (j === i + 1 && indentOf(lines[j]) > indentOf(lines[i])) return null;
+    below += cleanLine(lines[j]).length;
+  }
+  return below >= 40 && below >= 2 * title.length ? title : null;
+}
+
+interface Heading {
+  level: number;
+  text: string;
+  /** Written with a number in front, like "### 3. Title" or a plain "3. Title". */
+  numbered?: boolean;
+  /** Has an idea directly beneath it. */
+  hasBody?: boolean;
+}
 
 function collectBlocks(lines: string[], from: number): Block[] {
   const blocks: Block[] = [];
-  const stack: { level: number; text: string }[] = [];
+  const stack: Heading[] = [];
   let lead: string | undefined;
   const trail = () => stack.map((h) => h.text);
+  const emit = (block: Block) => {
+    blocks.push(block);
+    if (stack.length) stack.at(-1)!.hasBody = true;
+  };
+  /**
+   * A numbered heading with its own text is one entry in a run ("38. ..."). The next plain numbered
+   * title or section label is its sibling, not something inside it, so the entry is closed first.
+   */
+  const closeEntry = () => {
+    const at = stack.findIndex((h) => h.numbered && h.hasBody);
+    if (at === -1) return false;
+    stack.length = at;
+    return true;
+  };
+  const push = (h: Heading) => {
+    while (stack.length && stack.at(-1)!.level >= h.level) stack.pop();
+    stack.push(h);
+    lead = undefined;
+  };
   const n = lines.length;
   let i = from;
 
@@ -122,23 +191,28 @@ function collectBlocks(lines: string[], from: number): Block[] {
         i++;
         if (lines[i - 1].trim().startsWith(fence)) break;
       }
-      blocks.push({ kind: 'paragraph', lines: taken, headings: trail() });
+      emit({ kind: 'paragraph', lines: taken, headings: trail() });
       lead = undefined;
       continue;
     }
 
     const h = HEADING.exec(line);
     if (h) {
-      const level = h[1].length;
-      while (stack.length && stack.at(-1)!.level >= level) stack.pop();
-      stack.push({ level, text: cleanLine(h[2]) });
-      lead = undefined;
+      push({ level: h[1].length, text: cleanLine(h[2]), numbered: /^\d+[.)]\s/.test(h[2]) });
       i++;
       continue;
     }
 
     if (isRule(line)) {
       lead = undefined;
+      i++;
+      continue;
+    }
+
+    const title = numberedTitle(lines, i);
+    if (title) {
+      closeEntry();
+      push({ level: NUMBERED_TITLE_LEVEL, text: title, numbered: true });
       i++;
       continue;
     }
@@ -164,7 +238,7 @@ function collectBlocks(lines: string[], from: number): Block[] {
         taken.push({ text: l, line: j + 1 });
         j++;
       }
-      blocks.push({ kind: 'bullet', lines: taken, headings: trail(), lead });
+      emit({ kind: 'bullet', lines: taken, headings: trail(), lead });
       i = j;
       continue;
     }
@@ -178,9 +252,16 @@ function collectBlocks(lines: string[], from: number): Block[] {
     }
     const label = taken.length === 1 ? BOLD_LABEL.exec(taken[0].text) : null;
     if (label) {
-      while (stack.length && stack.at(-1)!.level >= BOLD_LABEL_LEVEL) stack.pop();
-      stack.push({ level: BOLD_LABEL_LEVEL, text: label[1].trim() });
-      lead = undefined;
+      push({ level: BOLD_LABEL_LEVEL, text: label[1].trim() });
+      i = j;
+      continue;
+    }
+    const section = taken.length === 1 && j < n && numberedTitle(lines, j) ? labelLike(taken[0].text) : null;
+    if (section) {
+      // After a run of entries, the label opens a new section beside the one that held them.
+      // A top-level "# Title" stays: it names the whole note, not one section of it.
+      if (closeEntry() && stack.length && stack.at(-1)!.level > 1) stack.pop();
+      push({ level: SECTION_LABEL_LEVEL, text: section });
       i = j;
       continue;
     }
@@ -190,7 +271,7 @@ function collectBlocks(lines: string[], from: number): Block[] {
       // "Things the party might find:" introduces the bullets below; it is context, not an idea.
       lead = cleanLine(joined).replace(/:$/, '');
     } else {
-      blocks.push({ kind: 'paragraph', lines: taken, headings: trail() });
+      emit({ kind: 'paragraph', lines: taken, headings: trail() });
       lead = undefined;
     }
     i = j;
@@ -222,9 +303,9 @@ function wholePiece(src: SrcLine[]): Piece {
   };
 }
 
-/** Packs sentences/lines into windows under MAX_CHARS; prose windows share one sentence of overlap. */
-function splitLong(kind: ChunkKind, src: SrcLine[]): Piece[] {
-  const units = kind === 'bullet' ? bulletUnits(src) : paragraphUnits(src);
+/** Packs sentences/lines into windows under the maximum; prose windows share one sentence of overlap. */
+function splitLong(kind: ChunkKind, src: SrcLine[], max: number): Piece[] {
+  const units = kind === 'bullet' ? bulletUnits(src, max) : paragraphUnits(src, max);
   const sep = kind === 'bullet' ? '\n' : ' ';
   const windows: Unit[][] = [];
   let cur: Unit[] = [];
@@ -232,11 +313,14 @@ function splitLong(kind: ChunkKind, src: SrcLine[]): Piece[] {
 
   for (const u of units) {
     const add = cleanLine(u.text).length + 1;
-    if (cur.length && len + add > MAX_CHARS) {
+    if (cur.length && len + add > max) {
       windows.push(cur);
-      const carry = kind === 'paragraph' && cur.length > 1 ? [cur.at(-1)!] : [];
+      // Prose repeats its last sentence for continuity, unless that would push the next window over the limit.
+      const last = cur.at(-1)!;
+      const lastLen = cleanLine(last.text).length + 1;
+      const carry = kind === 'paragraph' && cur.length > 1 && lastLen + add <= max ? [last] : [];
       cur = [...carry];
-      len = carry.reduce((s, c) => s + cleanLine(c.text).length + 1, 0);
+      len = carry.length ? lastLen : 0;
     }
     cur.push(u);
     len += add;
@@ -250,16 +334,16 @@ function splitLong(kind: ChunkKind, src: SrcLine[]): Piece[] {
   }));
 }
 
-function bulletUnits(src: SrcLine[]): Unit[] {
+function bulletUnits(src: SrcLine[], max: number): Unit[] {
   const out: Unit[] = [];
   for (const l of src) {
     if (isBlank(l.text)) continue;
-    for (const part of hardCut(l.text)) out.push({ text: part, line: l.line });
+    for (const part of hardCut(l.text, max)) out.push({ text: part, line: l.line });
   }
   return out;
 }
 
-function paragraphUnits(src: SrcLine[]): Unit[] {
+function paragraphUnits(src: SrcLine[], max: number): Unit[] {
   const lines = src.filter((l) => !isBlank(l.text));
   const starts: number[] = [];
   let joined = '';
@@ -276,18 +360,18 @@ function paragraphUnits(src: SrcLine[]): Unit[] {
     if (!text) continue;
     let idx = 0;
     for (let k = 0; k < starts.length; k++) if (starts[k] <= m.index!) idx = k;
-    for (const part of hardCut(text)) out.push({ text: part, line: lines[idx].line });
+    for (const part of hardCut(text, max)) out.push({ text: part, line: lines[idx].line });
   }
   return out;
 }
 
 /** A single run of text with no break points still has to fit the window. */
-function hardCut(text: string): string[] {
-  if (cleanLine(text).length <= MAX_CHARS) return [text];
+function hardCut(text: string, max: number): string[] {
+  if (cleanLine(text).length <= max) return [text];
   const out: string[] = [];
   let cur = '';
   for (const word of text.split(/\s+/)) {
-    if (cur && cur.length + word.length + 1 > MAX_CHARS) {
+    if (cur && cur.length + word.length + 1 > max) {
       out.push(cur);
       cur = word;
     } else {

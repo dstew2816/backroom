@@ -89,3 +89,39 @@ describe('incremental indexing', () => {
     expect(loadIndex(data)!.files['a.md']).toEqual(before);
   });
 });
+
+describe('design choices and index reuse', () => {
+  let notes: string;
+  let data: string;
+  const long = 'The old mill grinds grain for the village every single morning. '.repeat(10);
+
+  beforeAll(() => {
+    notes = mkdtempSync(join(tmpdir(), 'backroom-notes-'));
+    data = mkdtempSync(join(tmpdir(), 'backroom-data-'));
+    writeFileSync(join(notes, 'a.md'), `# Mill\n\n${long}\n\n- A short idea about a bridge\n`);
+  });
+  afterAll(() => {
+    rmSync(notes, { recursive: true, force: true });
+    rmSync(data, { recursive: true, force: true });
+  });
+
+  it('reuses vectors when the choices are the same', async () => {
+    await buildIndex(notes, data, fake, { logTimings: false });
+    const s = await buildIndex(notes, data, fake, { logTimings: false });
+    expect(s.chunksEmbedded).toBe(0);
+  });
+
+  it('does not reuse old vectors when maxChars changes', async () => {
+    const s = await buildIndex(notes, data, fake, { logTimings: false, maxChars: 200 });
+    expect(s.chunksReused).toBe(0);
+    expect(s.chunksEmbedded).toBe(s.chunksTotal);
+    expect(loadIndex(data)!.options?.maxChars).toBe(200);
+  });
+
+  it('does not reuse old vectors when headingContext changes', async () => {
+    const s = await buildIndex(notes, data, fake, { logTimings: false, maxChars: 200, headingContext: false });
+    expect(s.chunksReused).toBe(0);
+    expect(s.chunksEmbedded).toBeGreaterThan(0);
+    expect(loadIndex(data)!.options?.headingContext).toBe(false);
+  });
+});
