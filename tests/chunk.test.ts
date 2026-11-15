@@ -18,6 +18,103 @@ describe('frontmatter', () => {
   it('ignores an unclosed fence', () => {
     expect(parseFrontmatter(['---', 'tags: a', 'text']).endIndex).toBe(-1);
   });
+  it('does not mistake an opening divider and a section of notes for frontmatter', () => {
+    const text = '---\n\n## Test Section\n\n### 1. Test Title\n\nTest paragraph about a merchant.\n\n---\n\n## Next Section\n\nTest paragraph two.';
+    expect(parseFrontmatter(text.split('\n')).endIndex).toBe(-1);
+    const n = chunkNote('a.md', text);
+    expect(n.chunks.map((c) => c.body)).toEqual(['Test paragraph about a merchant.', 'Test paragraph two.']);
+    expect(n.chunks[0].headings).toEqual(['Test Section', 'Test Title']);
+  });
+  it('does not treat a divider-wrapped block without any key as frontmatter', () => {
+    expect(chunkNote('a.md', '---\n- Test idea one\n- Test idea two\n---\nTest paragraph.').chunks).toHaveLength(3);
+  });
+});
+
+describe('notes pasted without Markdown marks', () => {
+  const alpha = 'Test paragraph alpha about a merchant who sells lamps in the market.';
+  const beta = 'Test paragraph beta about a guard who sleeps at the gate every night.';
+  const gamma = 'Test paragraph gamma about a bridge that collapses when it rains.';
+  const plain = [
+    'Test Section One',
+    '1. Test Title Alpha',
+    alpha,
+    '',
+    '2. Test Title Beta',
+    beta,
+    '',
+    'Test Section Two',
+    '3. Test Title Gamma',
+    gamma,
+  ].join('\n');
+  const marked = [
+    '## Test Section One',
+    '',
+    '### 1. Test Title Alpha',
+    '',
+    alpha,
+    '',
+    '### 2. Test Title Beta',
+    '',
+    beta,
+    '',
+    '---',
+    '',
+    '## Test Section Two',
+    '',
+    '### 3. Test Title Gamma',
+    '',
+    gamma,
+  ].join('\n');
+  const trails = [
+    ['Test Section One', 'Test Title Alpha'],
+    ['Test Section One', 'Test Title Beta'],
+    ['Test Section Two', 'Test Title Gamma'],
+  ];
+
+  it('reads "1. Title" directly above its text as the title, and the line above that as the section', () => {
+    const n = chunkNote('a.md', plain);
+    expect(n.chunks.map((c) => c.body)).toEqual([alpha, beta, gamma]);
+    expect(n.chunks.map((c) => c.headings)).toEqual(trails);
+    expect(n.chunks.every((c) => c.kind === 'paragraph')).toBe(true);
+  });
+  it('gives the plain layout and the Markdown layout the same ideas', () => {
+    const a = chunkNote('a.md', plain);
+    const b = chunkNote('a.md', marked);
+    expect(b.chunks.map((c) => c.headings)).toEqual(trails);
+    expect(a.chunks.map((c) => c.id)).toEqual(b.chunks.map((c) => c.id));
+    expect(a.chunks.map((c) => c.context)).toEqual(b.chunks.map((c) => c.context));
+  });
+  it('does not file plain entries under the last Markdown section when both layouts share a note', () => {
+    const n = chunkNote('a.md', `${marked}\n\n${plain}`);
+    expect(n.chunks.map((c) => c.headings)).toEqual([...trails, ...trails]);
+  });
+  it('keeps a "# Title" at the top of the note above plain sections', () => {
+    const n = chunkNote('a.md', `# Test Note\n\n${plain}`);
+    expect(n.chunks.map((c) => c.headings)).toEqual(trails.map((t) => ['Test Note', ...t]));
+  });
+  it('nests plain numbered entries under a Markdown heading', () => {
+    const n = chunkNote('a.md', `## Test Section\n\n1. Test Title Alpha\n${alpha}\n\n2. Test Title Beta\n${beta}`);
+    expect(n.chunks.map((c) => c.headings)).toEqual([
+      ['Test Section', 'Test Title Alpha'],
+      ['Test Section', 'Test Title Beta'],
+    ]);
+  });
+  it('still treats ordinary numbered lists as ideas', () => {
+    expect(chunkNote('a.md', '1. Buy rope\nand a lamp').chunks.map((c) => c.body)).toEqual(['Buy rope and a lamp']);
+    const wrapped = chunkNote('a.md', '1. Check the players have enough healing\npotions before the boss fight, and restock');
+    expect(wrapped.chunks).toHaveLength(1);
+    expect(wrapped.chunks[0].body).toContain('healing potions');
+    const indented = chunkNote('a.md', '1. Test idea\n   which carries on along an indented line that is longer');
+    expect(indented.chunks).toHaveLength(1);
+    expect(indented.chunks[0].kind).toBe('bullet');
+    const sentence = chunkNote('a.md', `1. Test idea that ends like a sentence.\n${alpha}`);
+    expect(sentence.chunks[0].body).toContain('Test idea that ends like a sentence.');
+  });
+  it('keeps a short loose line as an idea unless it sits directly on a numbered entry', () => {
+    const n = chunkNote('a.md', `Test loose idea\n\n1. Test Title Alpha\n${alpha}`);
+    expect(n.chunks.map((c) => c.body)).toEqual(['Test loose idea', alpha]);
+    expect(n.chunks[1].headings).toEqual(['Test Title Alpha']);
+  });
 });
 
 describe('bullets', () => {
@@ -118,6 +215,15 @@ describe('long text', () => {
     expect(second.body).toContain(lastOfFirst);
     // every sentence survives somewhere
     for (let i = 0; i < 40; i++) expect(n.chunks.some((c) => c.body.includes(sentence(i)))).toBe(true);
+  });
+  it('never lets the repeated sentence push an idea over the limit', () => {
+    const short = 'Test short sentence about a merchant.';
+    const long = (i: number) => `Test long sentence number ${i} ${'about a merchant in a town '.repeat(6)}ends here.`;
+    const text = [short, long(1), long(2), long(3)].join(' ');
+    const n = chunkNote('a.md', text, { maxChars: 300 });
+    expect(n.chunks.length).toBeGreaterThan(1);
+    for (const c of n.chunks) expect(c.body.length).toBeLessThanOrEqual(300);
+    for (const s of [short, long(1), long(2), long(3)]) expect(n.chunks.some((c) => c.body.includes(s))).toBe(true);
   });
   it('splits a long bullet with children at line boundaries and keeps the parent as context', () => {
     const kids = Array.from({ length: 30 }, (_, i) => `\t- ${sentence(i)}`).join('\n');

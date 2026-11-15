@@ -131,6 +131,7 @@ An index records which design choices built it, and a different choice means the
 ## Notes on how it works
 
 - Notes are split on headings, paragraphs and top-level bullets. A bullet's indented children stay with it. One-line bullets are kept. Paragraphs over about 900 characters are split at sentence boundaries.
+- Notes pasted without Markdown marks are read the same way as marked ones: a short numbered line directly above its text (`1. The Title`) is that idea's title, and a short plain line directly above such an entry is its section. A note that opens with a `---` divider is not mistaken for a settings block.
 - Each idea is embedded with its note title and heading trail for context (all-MiniLM-L6-v2, 8-bit quantised, via transformers.js).
 - A scene is embedded when you search, so new text never needs indexing to be used as a query. New notes do need a re-index before they can be found.
 - Scores are cosine similarity. The page also shows `z`, how far above the average idea in your notes the match scores, and draws a divider where relevance drops sharply.

@@ -6,7 +6,8 @@ import { embedTextFor, MODEL_DTYPE, MODEL_ID, type Embedder } from './embed.js';
 import { scanFolder } from './scan.js';
 import type { Chunk } from './types.js';
 
-const FORMAT_VERSION = 1;
+/** Raise this when the rules for cutting notes into ideas change, so indexes built under the old rules are rebuilt. */
+const FORMAT_VERSION = 2;
 
 /** Design choices that change what gets embedded; an index built with other choices can't be reused. */
 export interface IndexOptions {
