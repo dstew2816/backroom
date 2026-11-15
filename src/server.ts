@@ -95,6 +95,12 @@ export function createApp(opts: AppOptions): Server {
         res.end(html);
         return;
       }
+      const font = req.method === 'GET' && /^\/fonts\/([a-z0-9-]+\.woff2)$/.exec(url.pathname);
+      if (font && existsSync(join(opts.webDir, 'fonts', font[1]))) {
+        res.writeHead(200, { 'Content-Type': 'font/woff2', 'Cache-Control': 'max-age=86400' });
+        res.end(readFileSync(join(opts.webDir, 'fonts', font[1])));
+        return;
+      }
       if (!url.pathname.startsWith('/api/')) return json(res, 404, { error: 'Not found' });
 
       if (req.method === 'GET' && url.pathname === '/api/status') return json(res, 200, status());

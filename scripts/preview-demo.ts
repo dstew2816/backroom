@@ -15,6 +15,7 @@ const types: Record<string, string> = {
   '.onnx': 'application/octet-stream',
   '.bin': 'application/octet-stream',
   '.txt': 'text/plain',
+  '.woff2': 'font/woff2',
 };
 
 createServer((req, res) => {

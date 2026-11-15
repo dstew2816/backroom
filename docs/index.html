@@ -4,86 +4,154 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Backroom (demo)</title>
+<meta name="color-scheme" content="dark light">
+<script>try { var t = localStorage.getItem('theme'); if (t) document.documentElement.dataset.theme = t; } catch (e) {}</script>
 <style>
-  :root {
-    --bg: #f6f5f2; --surface: #ffffff; --text: #1e1d1b; --muted: #6b6860; --line: #e2dfd8;
-    --accent: #3b5b8c; --accent-text: #ffffff; --bar: #3b5b8c; --bar-bg: #e9e6df; --used: #8a6d1f;
-    --focus: #3b5b8c55;
+  /* Matches dstew2816.github.io: graphite and silver, one red signal color, Instrument Sans with IBM Plex Mono for figures.
+     Fonts are served from ./fonts so the page calls no outside service. */
+  @font-face { font-family: "Instrument Sans"; src: url("fonts/instrument-sans.woff2") format("woff2"); font-weight: 400 700; font-display: swap; }
+  @font-face { font-family: "IBM Plex Mono"; src: url("fonts/ibm-plex-mono-400.woff2") format("woff2"); font-weight: 400; font-display: swap; }
+  @font-face { font-family: "IBM Plex Mono"; src: url("fonts/ibm-plex-mono-500.woff2") format("woff2"); font-weight: 500; font-display: swap; }
+
+  :root, :root[data-theme="dark"] {
+    --bg: #0c0d0f; --surface: #151719; --surface-2: #1c1f22; --line: #25282c; --line-strong: #3a3f46;
+    --text: #ecebe7; --muted: #9a9fa7; --accent: #d0d4da; --signal: #e0566a; --on-solid: #0c0d0f;
+    --shadow: 0 1px 0 rgba(255, 255, 255, .04) inset; --err: #f2918a;
   }
-  @media (prefers-color-scheme: dark) {
-    :root {
-      --bg: #161614; --surface: #1f1f1c; --text: #e8e6e0; --muted: #9a978e; --line: #343430;
-      --accent: #8fb0e0; --accent-text: #11161d; --bar: #8fb0e0; --bar-bg: #2c2c28; --used: #d3b45a;
-      --focus: #8fb0e055;
+  @media (prefers-color-scheme: light) {
+    :root:not([data-theme="dark"]) {
+      --bg: #f1f1ee; --surface: #ffffff; --surface-2: #f4f4f1; --line: #e3e2dd; --line-strong: #c9c7c0;
+      --text: #17181a; --muted: #5f656d; --accent: #2b3036; --signal: #b3263a; --on-solid: #ffffff;
+      --shadow: 0 1px 2px rgba(20, 20, 20, .05); --err: #b3261e;
     }
   }
+  :root[data-theme="light"] {
+    --bg: #f1f1ee; --surface: #ffffff; --surface-2: #f4f4f1; --line: #e3e2dd; --line-strong: #c9c7c0;
+    --text: #17181a; --muted: #5f656d; --accent: #2b3036; --signal: #b3263a; --on-solid: #ffffff;
+    --shadow: 0 1px 2px rgba(20, 20, 20, .05); --err: #b3261e;
+  }
+
   * { box-sizing: border-box; }
-  body { margin: 0; background: var(--bg); color: var(--text); font: 16px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
-  main { max-width: 760px; margin: 0 auto; padding: 24px 16px 64px; }
-  header { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
-  h1 { font-size: 1.4rem; margin: 0; letter-spacing: .01em; }
-  .status { color: var(--muted); font-size: .85rem; }
-  textarea { width: 100%; min-height: 96px; resize: vertical; padding: 12px; font: inherit; color: var(--text);
-    background: var(--surface); border: 1px solid var(--line); border-radius: 8px; }
-  textarea:focus, select:focus, button:focus-visible, input:focus-visible { outline: 3px solid var(--focus); outline-offset: 1px; }
-  .row { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; margin-top: 10px; }
-  .row label { display: inline-flex; gap: 6px; align-items: center; font-size: .9rem; color: var(--muted); }
-  select { font: inherit; font-size: .9rem; padding: 4px 8px; color: var(--text); background: var(--surface); border: 1px solid var(--line); border-radius: 6px; max-width: 100%; }
-  button { font: inherit; font-size: .9rem; padding: 6px 14px; border-radius: 6px; cursor: pointer;
-    color: var(--text); background: var(--surface); border: 1px solid var(--line); }
-  button:hover { border-color: var(--muted); }
-  button.primary { background: var(--accent); color: var(--accent-text); border-color: var(--accent); font-weight: 600; padding: 8px 20px; }
-  button:disabled { opacity: .55; cursor: default; }
+  html { -webkit-text-size-adjust: 100%; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 400 1rem/1.6 "Instrument Sans", system-ui, -apple-system, "Segoe UI", sans-serif; transition: background-color .2s, color .2s; }
+  a { color: inherit; text-decoration-color: var(--line-strong); text-underline-offset: .2em; }
+  a:hover { text-decoration-color: currentColor; }
+  .mono, .nums, .eyebrow, .pill, .where .loc { font-family: "IBM Plex Mono", ui-monospace, Consolas, monospace; font-variant-numeric: tabular-nums; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+  textarea:focus-visible, select:focus-visible { outline-offset: 1px; }
+
+  /* Floating pill navigation */
+  .nav { position: sticky; top: .75rem; z-index: 20; max-width: 48rem; margin: .75rem auto 0; padding: 0 1rem; }
+  .nav-in { display: flex; align-items: center; justify-content: space-between; gap: 1rem; background: var(--surface); border: 1px solid var(--line); border-radius: 999px; padding: .5rem .6rem .5rem 1.15rem; box-shadow: var(--shadow); }
+  .brand { font-weight: 600; text-decoration: none; white-space: nowrap; display: inline-flex; align-items: center; gap: .55rem; }
+  .pill { font-size: .68rem; font-weight: 500; padding: .1rem .55rem; border: 1px solid var(--signal); border-radius: 999px; color: var(--signal); }
+  .nav-r { display: flex; align-items: center; gap: 1rem; font-size: .9rem; color: var(--muted); }
+  .nav-r a { text-decoration: none; }
+  .nav-r a:hover { color: var(--text); }
+  .switch { display: inline-flex; align-items: center; gap: .55rem; background: none; border: 0; color: var(--muted); font: inherit; font-size: .9rem; cursor: pointer; padding: .2rem; border-radius: 999px; }
+  .switch .track { width: 2.4rem; height: 1.35rem; border-radius: 999px; background: var(--surface-2); border: 1px solid var(--line-strong); position: relative; }
+  .switch .track::after { content: ""; position: absolute; top: 2px; left: 2px; width: calc(1.35rem - 6px); height: calc(1.35rem - 6px); border-radius: 50%; background: var(--text); transition: transform .2s; }
+  .switch[aria-checked="true"] .track::after { transform: translateX(1.05rem); }
+  @media (prefers-reduced-motion: reduce) { .switch .track::after { transition: none; } body { transition: none; } }
+  @media (max-width: 30rem) { .switch .lbl, .about-link .long, .hint { display: none; } }
+
+  main { max-width: 48rem; margin: 0 auto; padding: 2.5rem 1rem 4rem; }
+  .eyebrow { font-size: .72rem; font-weight: 500; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin: 0 0 .6rem; }
+  h1 { font: 600 clamp(2.2rem, 7vw, 3rem)/1.08 "Instrument Sans", system-ui, sans-serif; letter-spacing: -.03em; margin: 0 0 .6rem; }
+  .lede { margin: 0 0 .4rem; color: var(--muted); max-width: 36rem; }
+  #status { margin: 0 0 1.75rem; font-size: .8rem; color: var(--muted); }
+
+  /* Search panel */
+  .panel { background: var(--surface); border: 1px solid var(--line); border-radius: 20px; padding: 1.1rem 1.1rem 1rem; box-shadow: var(--shadow); }
+  .panel > label { display: block; font-weight: 500; font-size: .95rem; margin: 0 0 .55rem; }
+  textarea { width: 100%; min-height: 6.5rem; resize: vertical; padding: .8rem .95rem; font: inherit; color: var(--text); background: var(--surface-2); border: 1px solid var(--line); border-radius: 14px; }
+  textarea::placeholder { color: var(--muted); opacity: .8; }
+  .row { display: flex; flex-wrap: wrap; gap: .6rem 1.1rem; align-items: center; margin-top: .9rem; }
+  .row label { display: inline-flex; gap: .45rem; align-items: center; font-size: .88rem; color: var(--muted); cursor: pointer; max-width: 100%; min-width: 0; }
+  input[type="checkbox"] { accent-color: var(--text); width: 1rem; height: 1rem; margin: 0; }
+  select { font: inherit; font-size: .85rem; padding: .3rem 1.6rem .3rem .7rem; color: var(--text); background: var(--surface-2); border: 1px solid var(--line-strong); border-radius: 999px; min-width: 0; max-width: min(22rem, 100%); }
+  button { font: inherit; font-size: .88rem; font-weight: 500; padding: .45rem 1rem; border-radius: 999px; cursor: pointer; color: var(--text); background: transparent; border: 1px solid var(--line-strong); }
+  button:hover { border-color: var(--text); }
+  button.primary { background: var(--text); color: var(--on-solid); border-color: var(--text); padding: .6rem 1.4rem; font-size: .95rem; }
+  button.primary:hover { opacity: .88; }
+  button:disabled { opacity: .5; cursor: default; }
   .spacer { flex: 1; }
-  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
-  .chip { font-size: .8rem; padding: 2px 10px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); color: var(--muted); cursor: pointer; }
-  .chip[aria-pressed="true"] { background: var(--accent); color: var(--accent-text); border-color: var(--accent); }
-  #meta { margin: 20px 0 8px; color: var(--muted); font-size: .85rem; min-height: 1.3em; }
-  .card { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; margin-bottom: 12px; }
-  .card.used { opacity: .72; }
-  .where { display: flex; justify-content: space-between; gap: 12px; font-size: .82rem; color: var(--muted); }
-  .where a { color: inherit; }
-  .text { margin: 6px 0 10px; white-space: pre-wrap; overflow-wrap: anywhere; }
+  .hint { font-size: .75rem; color: var(--muted); }
+  .chips { display: flex; flex-wrap: wrap; gap: .4rem; margin-top: .9rem; }
+  .chip { font-size: .78rem; font-weight: 400; padding: .2rem .7rem; background: var(--surface-2); border-color: var(--line); color: var(--muted); }
+  .chip[aria-pressed="true"] { background: var(--text); color: var(--on-solid); border-color: var(--text); }
+  .note { margin: 1rem 0 0; color: var(--muted); font-size: .85rem; border-left: 2px solid var(--line-strong); padding-left: .9rem; }
+
+  /* Results */
+  #meta { margin: 1.75rem 0 .9rem; color: var(--muted); font-size: .8rem; min-height: 1.3em; }
+  #meta.err { color: var(--err); }
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 1rem 1.15rem .9rem; margin-bottom: .75rem; box-shadow: var(--shadow); transition: border-color .15s; }
+  .card:hover { border-color: var(--line-strong); }
+  .card.used { opacity: .6; }
+  .where { display: flex; justify-content: space-between; align-items: baseline; gap: .75rem; font-size: .8rem; color: var(--muted); }
+  .where .path { overflow-wrap: anywhere; }
+  .where .rank { color: var(--text); font-weight: 600; margin-right: .35rem; }
+  .where .loc { font-size: .72rem; white-space: nowrap; }
+  .where a { text-decoration: none; }
+  .where a:hover { color: var(--text); }
+  .text { margin: .45rem 0 .7rem; white-space: pre-wrap; overflow-wrap: anywhere; }
   .text.clamp { display: -webkit-box; -webkit-line-clamp: 5; -webkit-box-orient: vertical; overflow: hidden; }
-  .more { background: none; border: none; padding: 0; color: var(--accent); font-size: .85rem; margin-bottom: 8px; }
-  .foot { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
-  .bar { width: 96px; height: 6px; background: var(--bar-bg); border-radius: 3px; overflow: hidden; flex: none; }
-  .bar > i { display: block; height: 100%; background: var(--bar); }
-  .nums { font-size: .8rem; color: var(--muted); }
-  .tag { font-size: .75rem; color: var(--muted); }
-  .badge { color: var(--used); font-size: .82rem; }
-  .divider { display: flex; align-items: center; gap: 10px; margin: 18px 0; color: var(--muted); font-size: .8rem; }
-  .divider::before, .divider::after { content: ""; flex: 1; border-top: 1px dashed var(--line); }
-  .err { color: #b3261e; } @media (prefers-color-scheme: dark) { .err { color: #f2918a; } }
-  .empty { color: var(--muted); padding: 24px 0; text-align: center; }
+  .more { background: none; border: 0; padding: 0; color: var(--muted); font-size: .82rem; margin: -.3rem 0 .7rem; text-decoration: underline; text-underline-offset: .2em; text-decoration-color: var(--line-strong); }
+  .more:hover { color: var(--text); }
+  .foot { display: flex; align-items: center; gap: .75rem; flex-wrap: wrap; padding-top: .7rem; border-top: 1px solid var(--line); }
+  .bar { width: 5.5rem; height: 5px; background: var(--surface-2); border: 1px solid var(--line); border-radius: 999px; overflow: hidden; flex: none; }
+  .bar > i { display: block; height: 100%; background: var(--accent); border-radius: 999px; }
+  .nums { font-size: .72rem; color: var(--muted); }
+  .tag { font-size: .72rem; color: var(--muted); padding: .05rem .5rem; border: 1px solid var(--line); border-radius: 999px; }
+  .badge { color: var(--signal); font-size: .78rem; }
+  .foot button { font-size: .8rem; padding: .3rem .85rem; }
+  .divider { display: flex; align-items: center; gap: .75rem; margin: 1.25rem 0; color: var(--signal); font: 500 .7rem "IBM Plex Mono", ui-monospace, monospace; letter-spacing: .06em; text-transform: uppercase; }
+  .divider::before, .divider::after { content: ""; flex: 1; border-top: 1px dashed var(--line-strong); }
+  .empty { color: var(--muted); padding: 2rem 0; text-align: center; }
+  footer { max-width: 48rem; margin: 0 auto; padding: 0 1rem 3rem; color: var(--muted); font-size: .85rem; }
 </style>
 </head>
 <body>
-<main>
-  <header>
-    <h1>Backroom</h1>
-    <span class="status" id="status">Loading…</span>
-  </header>
-
-  <label for="scene" class="status">What's happening at the table right now?</label>
-  <textarea id="scene" placeholder="e.g. two party members split off and are hiding in the highlands" autofocus></textarea>
-
-  <div class="row">
-    <button class="primary" id="go">Search</button>
-    <label><input type="checkbox" id="unused"> Unused only</label>
-    <label><input type="checkbox" id="stale" title="Boost ideas never used, or not used for a long time"> Resurface old prep</label>
-    <label>Folder
-      <select id="folder"><option value="">All</option></select>
-    </label>
-    <label>Show
-      <select id="k"><option>5</option><option selected>8</option><option>15</option><option>30</option></select>
-    </label>
-    <span class="spacer"></span>
-    <button id="reindex" title="Pick up notes you added or edited since the last index">Re-index</button>
+<nav class="nav" aria-label="Main">
+  <div class="nav-in">
+    <span class="brand">Backroom <span class="pill" id="mode-pill" hidden>demo</span></span>
+    <div class="nav-r">
+      <a class="about-link" id="about" href="https://dstew2816.github.io/projects/backroom.html" hidden>About<span class="long"> the project</span></a>
+      <button class="switch" type="button" role="switch" aria-checked="true" aria-label="Dark mode"><span class="lbl">Dark</span><span class="track"></span></button>
+    </div>
   </div>
-  <div class="chips" id="tags" hidden></div>
+</nav>
 
-  <p class="status" id="demo-note" hidden>Demo: searches run entirely in your browser. Nothing is sent anywhere, and "used" marks stay in this browser only.</p>
+<main>
+  <p class="eyebrow">Search your own prep</p>
+  <h1>What's happening at the table?</h1>
+  <p class="lede">Describe the scene in a few words. Backroom finds the ideas you already wrote that fit it. It never writes anything new.</p>
+  <p id="status" class="mono">Loading…</p>
+
+  <section class="panel">
+    <label for="scene">The scene right now</label>
+    <textarea id="scene" placeholder="e.g. two party members split off and are hiding in the highlands" autofocus></textarea>
+
+    <div class="row">
+      <button class="primary" id="go">Search</button>
+      <span class="hint mono">Ctrl/⌘ + Enter</span>
+      <span class="spacer"></span>
+      <button id="reindex" title="Pick up notes you added or edited since the last index">Re-index</button>
+    </div>
+    <div class="row">
+      <label><input type="checkbox" id="unused"> Unused only</label>
+      <label><input type="checkbox" id="stale" title="Boost ideas never used, or not used for a long time"> Resurface old prep</label>
+      <label>Folder
+        <select id="folder"><option value="">All</option></select>
+      </label>
+      <label>Show
+        <select id="k"><option>5</option><option selected>8</option><option>15</option><option>30</option></select>
+      </label>
+    </div>
+    <div class="chips" id="tags" hidden></div>
+    <p class="note" id="demo-note" hidden>This demo searches my own sample notes, entirely in your browser. Nothing is sent anywhere, and "used" marks stay in this browser only. The first search downloads the small comparison model (about 36 MB), so give it a moment.</p>
+  </section>
+
   <div id="meta" role="status" aria-live="polite"></div>
   <div id="results"></div>
 </main>
@@ -108,12 +176,15 @@ async function serverApi(path, body) {
 const store = {
   get(k) { try { return localStorage.getItem('backroom.' + k); } catch { return null; } },
   set(k, v) { try { localStorage.setItem('backroom.' + k, v); } catch {} },
+  setRaw(k, v) { try { localStorage.setItem(k, v); } catch {} },
 };
 
 function showStatus(s) {
   vault = s.vault;
   $('reindex').hidden = !!s.demo;
   $('demo-note').hidden = !s.demo;
+  $('mode-pill').hidden = !s.demo;
+  $('about').hidden = !s.demo;
   const built = s.builtAt ? new Date(s.builtAt).toLocaleString() : 'never';
   $('status').textContent = s.ready ? `${s.ideas} ideas from ${s.notes} notes · indexed ${built}` : 'No index yet — click Re-index';
   const folder = $('folder'), keep = folder.value;
@@ -142,12 +213,14 @@ function card(r, stale) {
   const lines = r.endLine > r.startLine ? `L${r.startLine}–${r.endLine}` : `L${r.startLine}`;
   const where = el('div', 'where');
   const title = [r.file.replace(/\.md$/i, ''), ...r.headings].join(' › ');
-  where.append(el('span', '', `${r.rank}. ${title}`));
+  const path = el('span', 'path');
+  path.append(el('span', 'rank', String(r.rank)), title);
+  where.append(path);
   if (vault) {
-    const a = el('a', '', `open · ${lines}`);
+    const a = el('a', 'loc', `open · ${lines}`);
     a.href = `obsidian://open?vault=${encodeURIComponent(vault)}&file=${encodeURIComponent(r.file.replace(/\.md$/i, ''))}`;
     where.append(a);
-  } else where.append(el('span', '', lines));
+  } else where.append(el('span', 'loc', lines));
 
   const text = el('div', 'text clamp', r.text);
   c.append(where, text);
@@ -225,6 +298,15 @@ $('reindex').onclick = async () => {
   } catch (e) { $('meta').className = 'err'; $('meta').textContent = e.message; }
   $('reindex').disabled = false;
 };
+
+// Light and dark switch. Shares the 'theme' choice with the portfolio site when served from the same origin.
+(() => {
+  const root = document.documentElement, sw = document.querySelector('.switch');
+  const current = () => root.dataset.theme || (matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+  const paint = () => { const dark = current() === 'dark'; sw.setAttribute('aria-checked', dark); sw.querySelector('.lbl').textContent = dark ? 'Dark' : 'Light'; };
+  sw.onclick = () => { const next = current() === 'dark' ? 'light' : 'dark'; root.dataset.theme = next; store.setRaw('theme', next); paint(); };
+  paint();
+})();
 
 api('/api/status').then(showStatus).catch((e) => { $('status').textContent = e.message; });
 </script>
