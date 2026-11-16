@@ -2,6 +2,15 @@
 
 Read this first. It holds the goals, the rules, the current state and the next steps, so a new session can carry on without the earlier conversation. Last updated 2026-11-16.
 
+## Keep this file current
+
+This file is how work survives between sessions, so updating it is part of the job, not something David has to ask for.
+
+- **When:** whenever something changes that a new session would need to know: work merged, a decision made, a rule added, a next step finished or added. Also before stopping, and straight away if David says he is running low on usage.
+- **What:** the "Current state" and "Next steps" sections, the "Last updated" date at the top, and any other section that has become untrue. Remove what is finished or wrong; do not just append.
+- **How:** include the update in the same pull request as the work it describes. If this file is the only thing that changed, make the edit and tell David it is ready; pushing and merging follow the same rules as any other change, so ask him first.
+- **Careful:** this file is public. No private notes, no personal details, and no evaluation numbers that are not already published in the README.
+
 ## What Backroom is
 
 A search box for a Dungeon Master's own ideas. David writes ideas down however they come. Mid-session, when players do something unplanned or he needs filler, he types a few words and Backroom shows the ideas he already wrote that fit, best match first.
