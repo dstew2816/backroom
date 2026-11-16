@@ -95,14 +95,15 @@ Changing how notes are cut means raising `FORMAT_VERSION` in `src/indexer.ts`, s
 - **Live and merged.** The tabletop-themed demo, the 57 notes, example searches, `?q=` links, the README opening with screenshot, the MIT license and automatic tests are all on `main`. Pull requests 1, 2 and 3 are merged.
 - **Works offline.** Checked by indexing and searching with all outside connections blocked: zero outside connections attempted. The web demo is a website and needs a connection to load.
 - **Evaluation harness is built** (`npm run eval`). It compares seven designs: ideas up to 300, 600, 900 or 1500 characters, labels off, keywords only, and meaning plus keywords.
-- **A first evaluation has been run, privately.** David asked for the test questions to be drafted by the AI assistant in his typing style. There are 67, over the public demo notes, in `eval/dev/demo-scenes.json`, with results in `eval/dev/demo-results.json`. Both are on his computer only and git-ignored. He has not reviewed the questions.
-  - What it suggested: the current defaults held up and no other design clearly beat them; keyword-only search was clearly worse; searching by kind of situation is the weak spot compared with searching for a specific moment.
-  - How far to trust it: the questions were written by someone who had read the notes, and there are only 86 ideas, so it is likely optimistic.
+- **A first evaluation is published in the README.** David asked for the test questions to be drafted by the AI assistant in his typing style. There are 67, over the public demo notes, in `eval/demo-scenes.json`. The README table says plainly that the questions were AI-drafted. He has not reviewed them one by one.
+  - What it showed: the current defaults held up and no other design clearly beat them; keyword-only search was clearly worse; searching by kind of situation is the weak spot compared with searching for a specific moment (top 5 for 63% against 90%).
+  - How far to trust it: the questions were written by an assistant that had read the notes, and there are only 86 ideas, so it is likely optimistic. Only 8 of the 67 questions are about a kind of situation.
+  - The script that generated the question file is on David's computer at `eval/dev/make-demo-scenes.mts` (git-ignored).
 
 ## Next steps
 
-1. **Decide whether the results table goes in the README.** If it does, say plainly that the questions were drafted with an AI assistant, and commit the question file so anyone can rerun it.
-2. **Improve searching by kind of situation** ("random encounter", "filler", "side quest hook"). Do not change the app's defaults without evaluation numbers to back the change.
+1. **David skims `eval/demo-scenes.json`** and rewords or removes any question he would never type. Rerun and update the README table if it changes.
+2. **Improve searching by kind of situation** ("random encounter", "filler", "side quest hook"). Add more kind-of-situation questions first (8 is too few to judge a change), then try ideas against them. Do not change the app's defaults without evaluation numbers to back the change.
 3. **David runs a real session with it** on his real notes and reports what annoyed him.
 4. **Update the portfolio page** for Backroom to match the new look. It lives in a different repository.
 5. **Open question:** where do his ideas first land (one file, many files, his phone)? That decides whether a quicker way to add ideas is needed.

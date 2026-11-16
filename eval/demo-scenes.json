@@ -1,0 +1,353 @@
+{
+ "label": "67 questions over the public demo notes, drafted with an AI assistant in the style the author searches",
+ "publishable": true,
+ "scenes": [
+  {
+   "scene": "merchant on the side of the road",
+   "expect": "A fancy carriage sits stranded on the side"
+  },
+  {
+   "scene": "fake tax collectors",
+   "expect": "A makeshift wooden toll gate blocks a stone bridge"
+  },
+  {
+   "scene": "someone stealing offerings",
+   "expect": "Along a quiet forest path stands a small"
+  },
+  {
+   "scene": "traffic jam on the trade road",
+   "expect": "A heavy rainstorm has turned a main trade route"
+  },
+  {
+   "scene": "lost animal",
+   "expect": "A distraught young shepherd runs down the road"
+  },
+  {
+   "scene": "strangers offer food, something is off",
+   "expect": "A small group of friendly travelers is relaxing"
+  },
+  {
+   "scene": "plants growing out of control",
+   "expect": "A frantic potion-maker stops the party along the trail"
+  },
+  {
+   "scene": "empty campsite, people just vanished",
+   "expect": "An abandoned horse-drawn cart rests in a ditch"
+  },
+  {
+   "scene": "funeral",
+   "expect": "A solemn line of figures dressed in black cloaks"
+  },
+  {
+   "scene": "creepy music every night",
+   "expect": "a solitary musician stands atop a high rocky crag"
+  },
+  {
+   "scene": "abandoned boat shows up",
+   "expect": "During a thick morning fog near a riverbank"
+  },
+  {
+   "scene": "sword stuck in a statue",
+   "expect": "a massive marble statue of a forgotten king"
+  },
+  {
+   "scene": "someone knows the party's secrets",
+   "expect": "an eccentric puppeteer performs a dark, elaborate play"
+  },
+  {
+   "scene": "weird weather in one spot",
+   "expect": "While traveling through a warm, sunny meadow"
+  },
+  {
+   "scene": "something strange in the river",
+   "expect": "A large bronze bell sits resting at the bottom"
+  },
+  {
+   "scene": "debt collector comes for a player",
+   "expect": "A party member is approached by a sharp-dressed"
+  },
+  {
+   "scene": "npc claims to be the rightful ruler",
+   "expect": "The party encounters a charismatic vagrant living in"
+  },
+  {
+   "scene": "someone is pretending to be the party",
+   "expect": "the party discovers they are locked out of their usual inn"
+  },
+  {
+   "scene": "proof that a beloved noble is evil",
+   "expect": "A terrified clerk from a prominent local guild"
+  },
+  {
+   "scene": "race other groups to loot a ruin before it's gone",
+   "expect": "tower near the border has begun to sink rapidly"
+  },
+  {
+   "scene": "miners dug too deep",
+   "expect": "A lucrative local silver mine has suddenly shut down"
+  },
+  {
+   "scene": "ally turns out to be a traitor",
+   "expect": "A close, trusted ally who has been funding"
+  },
+  {
+   "scene": "player inherits a house",
+   "expect": "A party member is named the sole heir"
+  },
+  {
+   "scene": "city on lockdown",
+   "expect": "The main water supply for a regional stronghold"
+  },
+  {
+   "scene": "prison riot",
+   "expect": "While the party is visiting a high-security prison"
+  },
+  {
+   "scene": "stop an execution",
+   "expect": "The party arrives in a city square just as"
+  },
+  {
+   "scene": "forest fire",
+   "expect": "A massive forest fire, driven by unnatural magical winds"
+  },
+  {
+   "scene": "all the magic protections go down",
+   "expect": "a rare planetary alignment causes all magical wards"
+  },
+  {
+   "scene": "the safe place isn't safe anymore",
+   "expect": "A holy monastery known across the land"
+  },
+  {
+   "scene": "airship crash",
+   "expect": "A massive luxury airship or flying vessel crashes"
+  },
+  {
+   "scene": "hostage situation",
+   "expect": "During high-level peace talks between two warring clans"
+  },
+  {
+   "scene": "town stuck repeating the same day",
+   "expect": "The party arrives in a small, quiet farming town"
+  },
+  {
+   "scene": "stuck in a loop in a dungeon",
+   "expect": "While descending into a deep underground ruin or tower"
+  },
+  {
+   "scene": "maze",
+   "expect": "A dense wall of thorny hedges shifts and moves"
+  },
+  {
+   "scene": "something wrong with a player's shadow",
+   "expect": "A party member notices that their own shadow"
+  },
+  {
+   "scene": "black market",
+   "expect": [
+    "A bustling underground market operates entirely in complete silence",
+    "A party member is approached by a sharp-dressed"
+   ]
+  },
+  {
+   "scene": "doorway to a copy of the world",
+   "expect": "sheet of floating silver glass splits a major valley"
+  },
+  {
+   "scene": "weird inn",
+   "expect": "A rustic roadside inn appears only during heavy fog"
+  },
+  {
+   "scene": "party split up",
+   "expect": "Facing a heavily fortified checkpoint or estate"
+  },
+  {
+   "scene": "fancy party undercover",
+   "expect": "An invitation arrives to an exclusive, high-society gala"
+  },
+  {
+   "scene": "player gets arrested for nothing",
+   "expect": "While passing through a city gate or venue entrance"
+  },
+  {
+   "scene": "rival adventurers",
+   "expect": "the group discovers a rival adventuring party"
+  },
+  {
+   "scene": "school arc",
+   "expect": "To earn official clearance, access restricted historical vaults"
+  },
+  {
+   "scene": "it's a trap",
+   "expect": [
+    "A trusted informant or employer sets up a meeting",
+    "After successfully completing a long and dangerous contract",
+    "A merchant convoy rolls down the highway"
+   ]
+  },
+  {
+   "scene": "bandits hiding in wagons",
+   "expect": "A merchant convoy rolls down the highway"
+  },
+  {
+   "scene": "1v1 duel",
+   "expect": "A lone, heavily armored warrior stands at the center"
+  },
+  {
+   "scene": "villain's right hand shows up",
+   "expect": "A high-ranking enforcer sent by the story"
+  },
+  {
+   "scene": "bar fight",
+   "expect": "While relaxing in a crowded tavern after a long journey"
+  },
+  {
+   "scene": "arena fight",
+   "expect": "into a grand colosseum battle royale"
+  },
+  {
+   "scene": "chase scene",
+   "expect": "A high-stakes heist or escape takes place across"
+  },
+  {
+   "scene": "the island is alive",
+   "expect": "While trekking across what appears to be a rocky ridge"
+  },
+  {
+   "scene": "defend the town from a horde",
+   "expect": "An overwhelming wave of enemies is reported heading"
+  },
+  {
+   "scene": "party is about to wipe, need a rescue",
+   "expect": "Outnumbered and backed into a corner by superior forces"
+  },
+  {
+   "scene": "lake that isn't on the map",
+   "expect": "While traveling through a parched wasteland or thick forest"
+  },
+  {
+   "scene": "walk into a battlefield",
+   "expect": "Emerging from a mountain pass into a new territory"
+  },
+  {
+   "scene": "employer betrays them after the job",
+   "expect": "After successfully completing a long and dangerous contract"
+  },
+  {
+   "scene": "bomb collars",
+   "expect": "The party wakes up in a dimly lit room"
+  },
+  {
+   "scene": "road is blocked",
+   "expect": [
+    "A heavy rainstorm has turned a main trade route",
+    "A frantic potion-maker stops the party along the trail",
+    "A makeshift wooden toll gate blocks a stone bridge",
+    "A lone, heavily armored warrior stands at the center"
+   ]
+  },
+  {
+   "scene": "jailbreak",
+   "expect": [
+    "While the party is visiting a high-security prison",
+    "While passing through a city gate or venue entrance"
+   ]
+  },
+  {
+   "scene": "random encounter",
+   "expect": [
+    "A fancy carriage sits stranded on the side",
+    "A makeshift wooden toll gate blocks a stone bridge",
+    "Along a quiet forest path stands a small",
+    "A heavy rainstorm has turned a main trade route",
+    "A distraught young shepherd runs down the road",
+    "A small group of friendly travelers is relaxing",
+    "A frantic potion-maker stops the party along the trail",
+    "An abandoned horse-drawn cart rests in a ditch"
+   ]
+  },
+  {
+   "scene": "travel filler",
+   "expect": [
+    "A fancy carriage sits stranded on the side",
+    "A makeshift wooden toll gate blocks a stone bridge",
+    "Along a quiet forest path stands a small",
+    "A heavy rainstorm has turned a main trade route",
+    "A distraught young shepherd runs down the road",
+    "A small group of friendly travelers is relaxing",
+    "A frantic potion-maker stops the party along the trail",
+    "An abandoned horse-drawn cart rests in a ditch"
+   ]
+  },
+  {
+   "scene": "something weird",
+   "expect": [
+    "The party arrives in a small, quiet farming town",
+    "While descending into a deep underground ruin or tower",
+    "A dense wall of thorny hedges shifts and moves",
+    "A party member notices that their own shadow",
+    "A bustling underground market operates entirely in complete silence",
+    "sheet of floating silver glass splits a major valley",
+    "A rustic roadside inn appears only during heavy fog"
+   ]
+  },
+  {
+   "scene": "atmosphere, no combat",
+   "expect": [
+    "A solemn line of figures dressed in black cloaks",
+    "a solitary musician stands atop a high rocky crag",
+    "During a thick morning fog near a riverbank",
+    "a massive marble statue of a forgotten king",
+    "an eccentric puppeteer performs a dark, elaborate play",
+    "While traveling through a warm, sunny meadow",
+    "A large bronze bell sits resting at the bottom"
+   ]
+  },
+  {
+   "scene": "side quest hook",
+   "expect": [
+    "A party member is approached by a sharp-dressed",
+    "The party encounters a charismatic vagrant living in",
+    "the party discovers they are locked out of their usual inn",
+    "A terrified clerk from a prominent local guild",
+    "tower near the border has begun to sink rapidly",
+    "A lucrative local silver mine has suddenly shut down",
+    "A close, trusted ally who has been funding",
+    "A party member is named the sole heir"
+   ]
+  },
+  {
+   "scene": "combat encounter",
+   "expect": [
+    "A trusted informant or employer sets up a meeting",
+    "A merchant convoy rolls down the highway",
+    "A lone, heavily armored warrior stands at the center",
+    "A high-ranking enforcer sent by the story",
+    "While relaxing in a crowded tavern after a long journey"
+   ]
+  },
+  {
+   "scene": "social encounter",
+   "expect": [
+    "Facing a heavily fortified checkpoint or estate",
+    "An invitation arrives to an exclusive, high-society gala",
+    "While passing through a city gate or venue entrance",
+    "the group discovers a rival adventuring party",
+    "To earn official clearance, access restricted historical vaults"
+   ]
+  },
+  {
+   "scene": "big dramatic event",
+   "expect": [
+    "The main water supply for a regional stronghold",
+    "While the party is visiting a high-security prison",
+    "The party arrives in a city square just as",
+    "A massive forest fire, driven by unnatural magical winds",
+    "a rare planetary alignment causes all magical wards",
+    "A holy monastery known across the land",
+    "A massive luxury airship or flying vessel crashes",
+    "During high-level peace talks between two warring clans"
+   ]
+  }
+ ]
+}

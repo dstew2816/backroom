@@ -24,7 +24,7 @@
 - **Only changed notes are reprocessed.** Unchanged files are skipped by size and date, then by content. An edited note reuses the fingerprints of the ideas in it that did not change.
 - **"Used" marks survive editing.** An idea is identified by its own text, not its line number, so adding notes above it does not lose the mark.
 - **Honest about weak matches.** Each result shows how far it stands above a typical idea, and the page draws a line where relevance drops sharply.
-- **Measured, not guessed.** An evaluation harness compares seven designs (idea size, heading context, keyword matching, and a mix) by how often the right idea lands near the top. It is built and tested; the results are not in yet, because the test questions have to be written by hand against real notes. See [Evaluation](#evaluation).
+- **Measured, not guessed.** An evaluation harness compares seven designs (idea size, heading context, keyword matching, and a mix) by how often the right idea lands near the top. On 67 test questions over the demo notes, the current design puts a right idea in the top 5 for 87% of them, and no alternative clearly beats it. See [Evaluation](#evaluation) for the table and its limits.
 - **The demo is the real code.** The static demo runs the same search code in the browser against a prebuilt index, with no server behind it.
 
 Built with TypeScript on Node, [transformers.js](https://github.com/huggingface/transformers.js) for the model, and Vitest. The web page is a single HTML file with no framework. The tests use a stand-in for the model, so they run in seconds without downloading anything.
@@ -79,9 +79,36 @@ The build refuses folders outside `demo-sample/` unless you pass `--allow-outsid
 
 ## Evaluation
 
-**Status: nothing has been measured yet on real notes.** The tool below is built and tested with stand-in (fake) data only. No scores are quoted anywhere in this repository.
-
 The question it answers: when I type a scene, how often does the right idea show up near the top of the results? That lets design choices (idea size, heading context, keyword matching) be compared with numbers instead of by feel. It only finds and ranks text you wrote; it never writes text.
+
+### Results so far
+
+Measured on the public demo notes (86 ideas) with 67 test questions. **The questions were drafted with an AI assistant, in the short, loose style I search in, not written by hand by me.** They are in [`eval/demo-scenes.json`](eval/demo-scenes.json), so the table can be reproduced with `npm run eval -- --notes demo-sample --scenes eval/demo-scenes.json`.
+
+| Design | Right idea in top 5 | In top 10 | Mean reciprocal rank | Never found |
+|---|---|---|---|---|
+| **Current: ideas up to 900 characters, labels on, meaning search** | **87%** | **94%** | **0.759** | 0 of 67 |
+| Ideas up to 300 characters | 72% | 84% | 0.563 | 0 of 67 |
+| Ideas up to 600 characters | 85% | 94% | 0.747 | 0 of 67 |
+| Ideas up to 1500 characters | 87% | 94% | 0.759 | 0 of 67 |
+| Labels off (no heading context) | 88% | 91% | 0.763 | 0 of 67 |
+| Keywords only (BM25) | 73% | 79% | 0.642 | 12 of 67 |
+| Meaning plus keywords (hybrid) | 81% | 90% | 0.763 | 0 of 67 |
+
+What I take from it:
+
+- **The current design stays.** One question is worth 1.5 points, so the designs within a few points of it are tied, and none is clearly better.
+- **Meaning search earns its place.** Keyword matching never found the idea for 12 of the 67 questions, because the question shared no word with the note.
+- **Searching by kind of situation is the weak spot.** The 59 questions about a specific moment ("fake tax collectors") reached the top 5 for 90%. The 8 about a kind of situation ("random encounter", "side quest hook") reached it for 63%. Eight is too few to be sure, but it is where the next work goes.
+- **Labels help exactly there.** For those 8, mean reciprocal rank was 0.67 with labels and 0.50 without; for specific moments, labels made no real difference.
+
+Limits, stated plainly:
+
+- The questions came from an assistant that had read the notes, so they are probably easier than what I would type cold. Read the numbers as optimistic.
+- 86 ideas is a small haystack. A few thousand real notes would be harder.
+- The drop for 300-character ideas is partly the test's own doing: an idea cut into pieces is only credited through its first piece.
+- Nothing here was measured on my private notes.
+
 
 ```
 npm run eval -- --notes "<notes folder>" --scenes <scenes.json>
